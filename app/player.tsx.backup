@@ -1,0 +1,617 @@
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  ActivityIndicator,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Colors, getColors } from '../constants/Colors';
+import { YouTubePlayerComponent, YouTubePlayerHandle } from '../components/YouTubePlayer';
+import { CaptureButton } from '../components/CaptureButton';
+import { MomentsList } from '../components/MomentsList';
+import { PlaylistControls } from '../components/PlaylistControls';
+import { PlaylistModal } from '../components/PlaylistModal';
+import { VideoTransitionNotification } from '../components/VideoTransitionNotification';
+import { DrivingModeControls } from '../components/DrivingModeControls';
+import { useMomentsContext } from '../contexts/MomentsContext';
+import { useTopBarContext } from '../contexts/TopBarContext';
+import { usePlaylist } from '../contexts/PlaylistContext';
+import { extractVideoId, getVideoTitle } from '../utils/youtube';
+import { fetchYouTubeMetadataWithFallback } from '../services/youtubeMetadata';
+import { formatTime } from '../utils/time';
+import { VideoState } from '../types/moment';
+import { Ionicons } from '@expo/vector-icons';
+
+export default function PlayerScreen() {
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const playerRef = useRef<YouTubePlayerHandle>(null);
+
+  // Extract params
+  const videoId = params.videoId as string;
+  const timestamp = params.timestamp ? parseFloat(params.timestamp as string) : undefined;
+  const title = params.title as string;
+  const author = params.author as string;
+  const thumbnail = params.thumbnail as string;
+  const url = params.url as string;
+  const isFromApi = params.isFromApi === 'true';
+
+  const [videoTitle, setVideoTitle] = useState<string>(title || '');
+  const [videoAuthor, setVideoAuthor] = useState<string>(author || '');
+  const [videoThumbnail, setVideoThumbnail] = useState<string>(thumbnail || '');
+  const [metadataLoaded, setMetadataLoaded] = useState<boolean>(isFromApi || false);
+  const [videoState, setVideoState] = useState<VideoState>({
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    isReady: false,
+  });
+  const [seekToTime, setSeekToTime] = useState<number | undefined>(timestamp);
+  const isSeekingRef = useRef(false);
+  const [isDark, setIsDark] = useState(false);
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [nextVideoCountdown, setNextVideoCountdown] = useState<number>(0);
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isPlayingNext, setIsPlayingNext] = useState(false);
+  const [isDrivingMode, setIsDrivingMode] = useState(false);
+
+  const colors = getColors(isDark);
+
+  // Écoute des changements de dimensions d'écran
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenData(window);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Calcul dynamique de la hauteur de la vidéo
+  const getVideoHeight = useMemo(() => {
+    const { width, height } = screenData;
+    const isLandscape = width > height;
+    const videoWidth = width;
+    const idealHeight = videoWidth * (9 / 16); // Ratio 16:9
+
+    // Limites adaptatives
+    const maxHeight = isLandscape ? height * 0.4 : height * 0.3;
+    const minHeight = isLandscape ? 150 : 180;
+
+    return Math.max(minHeight, Math.min(idealHeight, maxHeight));
+  }, [screenData]);
+
+  // Context hooks
+  const {
+    captureMoment: captureFromContext,
+    getMomentsForVideo,
+    deleteMomentFromVideo,
+    getVideoById,
+  } = useMomentsContext();
+
+  const {
+    setVideoState: setTopBarVideoState,
+    clearVideoState,
+    registerBackNavigation,
+    setTitle,
+  } = useTopBarContext();
+
+  const {
+    currentState: playlistState,
+    playNext,
+    playPrevious,
+    getCurrentVideo,
+    getNextVideo,
+  } = usePlaylist();
+
+  // Get moments for this video
+  const moments = useMemo(() => {
+    return videoId ? getMomentsForVideo(videoId) : [];
+  }, [videoId, getMomentsForVideo]);
+
+  // Set video state in TopBar
+  useEffect(() => {
+    if (videoId && videoTitle) {
+      setTopBarVideoState(videoId, videoTitle);
+    }
+  }, [videoId, videoTitle, setTopBarVideoState]);
+
+  // Set title in TopBar
+  useEffect(() => {
+    if (videoTitle) {
+      setTitle(videoTitle);
+    } else {
+      setTitle('Lecteur Vidéo');
+    }
+  }, [videoTitle, setTitle]);
+
+  // Load video metadata if not provided
+  useEffect(() => {
+    const loadMetadata = async () => {
+      if (videoId && (!videoTitle || !metadataLoaded)) {
+        const existingVideo = getVideoById(videoId);
+        if (existingVideo) {
+          setVideoTitle(existingVideo.title);
+          // Essayer de récupérer les métadonnées enrichies si pas déjà fait
+          if (!metadataLoaded && url) {
+            try {
+              const metadata = await fetchYouTubeMetadataWithFallback(url, videoId);
+              setVideoTitle(metadata.title);
+              setVideoAuthor(metadata.author_name);
+              setVideoThumbnail(metadata.thumbnail_url);
+              setMetadataLoaded(true);
+            } catch (error) {
+              console.warn('Failed to load enriched metadata:', error);
+            }
+          }
+        } else if (url) {
+          try {
+            const metadata = await fetchYouTubeMetadataWithFallback(url, videoId);
+            setVideoTitle(metadata.title);
+            setVideoAuthor(metadata.author_name);
+            setVideoThumbnail(metadata.thumbnail_url);
+            setMetadataLoaded(true);
+          } catch (error) {
+            console.warn('Failed to load metadata, using fallback:', error);
+            const extractedTitle = getVideoTitle(url) || `Vidéo YouTube ${videoId}`;
+            setVideoTitle(extractedTitle);
+          }
+        }
+      }
+    };
+
+    loadMetadata();
+  }, [videoId, videoTitle, metadataLoaded, url, getVideoById]);
+
+  // Handle back navigation
+  const handleBackNavigation = useCallback(() => {
+    router.back();
+  }, [router]);
+
+  // Register back navigation
+  useEffect(() => {
+    const cleanup = registerBackNavigation(handleBackNavigation);
+    return cleanup;
+  }, [registerBackNavigation, handleBackNavigation]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearVideoState();
+    };
+  }, [clearVideoState]);
+
+  const handleVideoStateChange = useCallback((state: VideoState) => {
+    console.log('Video state changed:', state);
+    setVideoState(state);
+
+    // Reset seekToTime when player is ready and we have a pending seek
+    if (state.isReady && seekToTime !== undefined && !isSeekingRef.current) {
+      setTimeout(() => {
+        console.log('Clearing seekToTime after player ready');
+        setSeekToTime(undefined);
+        isSeekingRef.current = false;
+      }, 1000);
+    }
+  }, [seekToTime]);
+
+  const handleCaptureMoment = async () => {
+    if (!videoState.isReady || !videoId || !playerRef.current) {
+      console.warn('Video not ready for capture');
+      return;
+    }
+
+    try {
+      // Get current time directly from the player
+      const currentTime = await playerRef.current.getCurrentTime();
+      console.log('Capturing moment at time:', currentTime);
+
+      // Verify that currentTime is valid
+      let timeToCapture = currentTime;
+      if (currentTime === undefined || currentTime === null) {
+        console.warn('getCurrentTime returned invalid value, using state currentTime:', videoState.currentTime);
+        timeToCapture = videoState.currentTime;
+      }
+
+      const moment = await captureFromContext(
+        videoId,
+        timeToCapture,
+        30,
+        videoTitle || 'Sans titre',
+        url || `https://youtube.com/watch?v=${videoId}`,
+        videoThumbnail
+      );
+
+      console.log(`Moment captured successfully at ${formatTime(timeToCapture)}`);
+    } catch (error) {
+      console.error('Error capturing moment:', error);
+    }
+  };
+
+  const handlePlayMoment = (timestamp: number) => {
+    // Prevent multiple seeks in quick succession
+    if (isSeekingRef.current) {
+      console.log('Seek already in progress, ignoring');
+      return;
+    }
+
+    console.log('Playing moment at:', timestamp);
+    isSeekingRef.current = true;
+
+    if (playerRef.current && videoState.isReady) {
+      playerRef.current.seekTo(timestamp, true);
+      setTimeout(() => {
+        isSeekingRef.current = false;
+      }, 1000);
+    } else {
+      setSeekToTime(timestamp);
+    }
+  };
+
+  const handleDeleteMoment = (momentId: string) => {
+    Alert.alert(
+      'Supprimer le moment',
+      'Êtes-vous sûr de vouloir supprimer ce moment?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            if (!videoId) {
+              Alert.alert('Erreur', 'ID de vidéo manquant');
+              return;
+            }
+            try {
+              await deleteMomentFromVideo(videoId, momentId);
+            } catch (error) {
+              console.error('Error deleting moment:', error);
+              Alert.alert('Erreur', 'Impossible de supprimer le moment');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle video end for playlist functionality
+  const handleVideoEnd = useCallback(() => {
+    if (playlistState.currentPlaylist && playlistState.autoPlay) {
+      const nextVideo = getNextVideo();
+      if (nextVideo) {
+        console.log('Video ended, starting countdown for next video');
+        startNextVideoCountdown();
+      }
+    }
+  }, [playlistState, getNextVideo]);
+
+  // Start countdown for next video
+  const startNextVideoCountdown = useCallback(() => {
+    setNextVideoCountdown(5);
+    countdownIntervalRef.current = setInterval(() => {
+      setNextVideoCountdown(prev => {
+        if (prev <= 1) {
+          if (countdownIntervalRef.current) {
+            clearInterval(countdownIntervalRef.current);
+            countdownIntervalRef.current = null;
+          }
+          handlePlayNext();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  // Cancel countdown
+  const cancelCountdown = useCallback(() => {
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setNextVideoCountdown(0);
+  }, []);
+
+  // Handle playlist navigation
+  const handlePlayNext = useCallback(() => {
+    if (isPlayingNext) return;
+
+    setIsPlayingNext(true);
+    const nextVideo = playNext();
+    if (nextVideo) {
+      // Navigate to next video
+      router.replace({
+        pathname: '/player',
+        params: {
+          videoId: nextVideo.videoId,
+          title: nextVideo.title,
+          author: nextVideo.author || '',
+          thumbnail: nextVideo.thumbnail || '',
+          url: nextVideo.url,
+          isFromApi: 'true',
+        },
+      });
+    }
+    setTimeout(() => setIsPlayingNext(false), 1000);
+  }, [playNext, router, isPlayingNext]);
+
+  const handlePlayPrevious = useCallback(() => {
+    if (isPlayingNext) return;
+
+    setIsPlayingNext(true);
+    const prevVideo = playPrevious();
+    if (prevVideo) {
+      // Navigate to previous video
+      router.replace({
+        pathname: '/player',
+        params: {
+          videoId: prevVideo.videoId,
+          title: prevVideo.title,
+          author: prevVideo.author || '',
+          thumbnail: prevVideo.thumbnail || '',
+          url: prevVideo.url,
+          isFromApi: 'true',
+        },
+      });
+    }
+    setTimeout(() => setIsPlayingNext(false), 1000);
+  }, [playPrevious, router, isPlayingNext]);
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, []);
+
+  if (!videoId) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorText, { color: colors.text.primary }]}>
+            ID de vidéo manquant
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      {/* Lecteur YouTube en haut - pleine largeur */}
+      <View
+        style={[
+          styles.videoPlayerSection,
+          {
+            height: getVideoHeight,
+          }
+        ]}
+      >
+        <YouTubePlayerComponent
+          ref={playerRef}
+          videoId={videoId}
+          onStateChange={handleVideoStateChange}
+          onVideoEnd={handleVideoEnd}
+          seekToTime={seekToTime}
+          autoplay={true}
+        />
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Playlist controls */}
+        <View style={styles.playlistSection}>
+          {/* Mode toggle */}
+          <View style={styles.modeToggleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.modeToggle,
+                {
+                  backgroundColor: isDrivingMode ? colors.accent : colors.background.secondary,
+                },
+              ]}
+              onPress={() => setIsDrivingMode(!isDrivingMode)}
+            >
+              <Ionicons
+                name="car"
+                size={16}
+                color={isDrivingMode ? '#fff' : colors.text.secondary}
+              />
+              <Text
+                style={[
+                  styles.modeToggleText,
+                  { color: isDrivingMode ? '#fff' : colors.text.secondary },
+                ]}
+              >
+                Mode conduite
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Controls based on mode */}
+          {isDrivingMode ? (
+            <DrivingModeControls
+              onAddToPlaylist={() => setShowPlaylistModal(true)}
+              onNext={handlePlayNext}
+              onPrevious={handlePlayPrevious}
+              isLoading={isPlayingNext}
+              isDark={isDark}
+            />
+          ) : (
+            <PlaylistControls
+              onAddToPlaylist={() => setShowPlaylistModal(true)}
+              onNext={handlePlayNext}
+              onPrevious={handlePlayPrevious}
+              isLoading={isPlayingNext}
+              isDark={isDark}
+              compact={false}
+            />
+          )}
+        </View>
+
+        {/* Zone des moments */}
+        <View style={styles.momentsSection}>
+          <ScrollView
+            style={styles.momentsScrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.momentsContent}
+          >
+            <View style={styles.momentsContainer}>
+              <MomentsList
+                moments={moments}
+                onPlayMoment={handlePlayMoment}
+                onDeleteMoment={handleDeleteMoment}
+              />
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* Bouton de capture fixe en bas */}
+        <View style={styles.captureButtonContainer}>
+          <CaptureButton
+            onCapture={handleCaptureMoment}
+            disabled={!videoState.isReady}
+            currentTime={videoState.currentTime}
+            modern={true}
+          />
+        </View>
+      </KeyboardAvoidingView>
+
+      {/* Video transition notification */}
+      <VideoTransitionNotification
+        visible={nextVideoCountdown > 0}
+        countdown={nextVideoCountdown}
+        nextVideoTitle={getNextVideo()?.title}
+        onCancel={cancelCountdown}
+        onPlayNow={() => {
+          cancelCountdown();
+          handlePlayNext();
+        }}
+        isDark={isDark}
+      />
+
+      {/* Playlist modal */}
+      <PlaylistModal
+        visible={showPlaylistModal}
+        onClose={() => setShowPlaylistModal(false)}
+        videoData={{
+          videoId: videoId || '',
+          title: videoTitle,
+          author: videoAuthor,
+          thumbnail: videoThumbnail,
+          url: url || '',
+        }}
+        isDark={isDark}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+
+  // Section vidéo - Pleine largeur en haut
+  videoPlayerSection: {
+    backgroundColor: '#000',
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+
+  keyboardAvoid: {
+    flex: 1,
+  },
+
+  // Section des moments
+  momentsSection: {
+    flex: 1,
+  },
+
+  momentsScrollView: {
+    flex: 1,
+  },
+
+  momentsContent: {
+    paddingBottom: 120, // Espace pour le bouton capture
+    paddingTop: 16,
+  },
+
+  momentsContainer: {
+    paddingHorizontal: 20,
+    minHeight: 200,
+  },
+
+  // Bouton capture fixe
+  playlistSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+
+  modeToggleContainer: {
+    alignItems: 'flex-end',
+  },
+
+  modeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
+  },
+
+  modeToggleText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  captureButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    paddingTop: 20,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+
+
+  // Error state
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+
+  errorText: {
+    fontSize: 18,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+});
