@@ -255,8 +255,11 @@ export default function PlayerScreen() {
 
   // Obtenir l'ID de la vidéo actuellement en cours
   const getCurrentVideoId = () => {
-    const currentVideo = simplePlaylist.videos[simplePlaylist.currentIndex];
-    return currentVideo?.id;
+    // Retourner l'ID de la vidéo actuellement jouée (depuis les params)
+    // et non pas celle de la playlist
+    // Chercher dans la playlist si la vidéo actuelle y est
+    const currentVideoInPlaylist = simplePlaylist.videos.find(v => v.videoId === videoId);
+    return currentVideoInPlaylist?.id || undefined;
   };
 
   useEffect(() => {
@@ -384,7 +387,14 @@ export default function PlayerScreen() {
       url: video.url,
       isFromApi: 'true',
     });
-  }, [simplePlaylist.videos, router]);
+
+    // Update local state and TopBar title
+    setVideoTitle(video.title);
+    setVideoAuthor(video.author || '');
+    setVideoThumbnail(video.thumbnail || '');
+    setTitle(video.title);
+    setTopBarVideoState(video.videoId, video.title);
+  }, [simplePlaylist.videos, router, setTitle, setTopBarVideoState]);
 
   // Kept for future use - allows reordering videos in playlist
   const moveVideo = useCallback((fromIndex: number, toIndex: number) => {
