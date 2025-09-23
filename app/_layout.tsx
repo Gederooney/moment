@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MomentsProvider } from '../contexts/MomentsContext';
 import { TopBarProvider, useTopBarContext } from '../contexts/TopBarContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
@@ -38,15 +39,17 @@ function AppContent() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <TopBarProvider>
-        <MomentsProvider>
-          <PlaylistProvider>
-            <AppContent />
-          </PlaylistProvider>
-        </MomentsProvider>
-      </TopBarProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <TopBarProvider>
+          <MomentsProvider>
+            <PlaylistProvider>
+              <AppContent />
+            </PlaylistProvider>
+          </MomentsProvider>
+        </TopBarProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -8,6 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { CapturedMoment } from '../types/moment';
 import { Colors } from '../constants/Colors';
+import { SwipeableItem } from './SwipeableItem';
 
 interface MomentsListProps {
   moments: CapturedMoment[];
@@ -30,45 +31,51 @@ export const MomentsList: React.FC<MomentsListProps> = ({
     return `${seconds}s`;
   };
 
-  const renderMoment = ({ item, index }: { item: CapturedMoment; index: number }) => (
-    <TouchableOpacity
-      style={styles.momentItem}
-      onPress={() => onPlayMoment(item.timestamp)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.momentContent}>
-        <View style={styles.momentInfo}>
-          <View style={styles.momentHeader}>
-            <Text style={styles.momentTitle}>
-              Moment {index + 1}
-            </Text>
-            <Text style={styles.momentDuration}>
-              {formatDuration(item.duration)}
-            </Text>
+  const renderMoment = ({ item, index }: { item: CapturedMoment; index: number }) => {
+    return (
+      <SwipeableItem
+        onDelete={() => onDeleteMoment(item.id)}
+        deleteConfirmTitle="Supprimer le moment"
+        deleteConfirmMessage="Êtes-vous sûr de vouloir supprimer ce moment ?"
+        containerStyle={styles.swipeableContainer}
+        showArchiveAction={false}
+      >
+        <TouchableOpacity
+          style={styles.momentItem}
+          onPress={() => onPlayMoment(item.timestamp)}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Lire le moment ${index + 1} à ${formatTime(item.timestamp)}`}
+          accessibilityHint="Appuyez pour lire ce moment, ou balayez vers la gauche pour supprimer"
+        >
+          <View style={styles.momentContent}>
+            <View style={styles.momentInfo}>
+              <View style={styles.momentHeader}>
+                <Text style={styles.momentTitle}>
+                  Moment {index + 1}
+                </Text>
+                <Text style={styles.momentDuration}>
+                  {formatDuration(item.duration)}
+                </Text>
+              </View>
+              <Text style={styles.momentTimestamp}>
+                Débute à {formatTime(item.timestamp)}
+              </Text>
+            </View>
+            <View style={styles.momentActions}>
+              <View style={styles.playIcon}>
+                <Ionicons name="play" size={20} color={Colors.primary} />
+              </View>
+              {/* Swipe hint indicator */}
+              <View style={styles.swipeHint}>
+                <Ionicons name="swap-horizontal" size={14} color={Colors.text.tertiary} />
+              </View>
+            </View>
           </View>
-          <Text style={styles.momentTimestamp}>
-            Débute à {formatTime(item.timestamp)}
-          </Text>
-        </View>
-        <View style={styles.momentActions}>
-          <View style={styles.playIcon}>
-            <Ionicons name="play" size={20} color={Colors.primary} />
-          </View>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              onDeleteMoment(item.id);
-            }}
-            accessibilityLabel="Supprimer le moment"
-            accessibilityHint="Supprimer ce moment capturé"
-          >
-            <Ionicons name="trash" size={18} color={Colors.error} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+        </TouchableOpacity>
+      </SwipeableItem>
+    );
+  };
 
   if (moments.length === 0) {
     return (
@@ -89,9 +96,7 @@ export const MomentsList: React.FC<MomentsListProps> = ({
       </Text>
       <View style={styles.list}>
         {moments.map((item, index) => (
-          <View key={item.id}>
-            {renderMoment({ item, index })}
-          </View>
+          renderMoment({ item, index })
         ))}
       </View>
     </View>
@@ -111,14 +116,17 @@ const styles = StyleSheet.create({
   list: {
     // Removed flex: 1 to allow natural height
   },
+  swipeableContainer: {
+    marginBottom: 12,
+  },
   momentItem: {
     backgroundColor: Colors.background.white,
     borderRadius: 12,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     shadowOpacity: 0,
     elevation: 0,
+    overflow: 'hidden',
   },
   momentContent: {
     flexDirection: 'row',
@@ -161,10 +169,12 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
-  deleteButton: {
-    backgroundColor: '#fee2e2',
-    padding: 8,
-    borderRadius: 8,
+  swipeHint: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 24,
+    height: 24,
+    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,

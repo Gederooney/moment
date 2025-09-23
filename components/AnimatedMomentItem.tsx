@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, StyleSheet } from 'react-native';
-import { MomentHistoryItem } from './MomentHistoryItem';
+import { SwipeableMomentItem } from './SwipeableMomentItem';
 import { CapturedMoment } from '../types/moment';
 
 interface AnimatedMomentItemProps {
@@ -60,7 +60,7 @@ export const AnimatedMomentItem: React.FC<AnimatedMomentItemProps> = ({
         },
       ]}
     >
-      <MomentHistoryItem
+      <SwipeableMomentItem
         moment={moment}
         onPlay={onPlay}
         onDelete={onDelete}
