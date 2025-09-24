@@ -18,6 +18,7 @@ interface QueueProps {
   onVideoPress: (video: QueueVideoItem) => void;
   onAddVideo: (url: string) => Promise<void> | void;
   onVideoRemove?: (video: QueueVideoItem) => void;
+  onVideoReorder?: (newOrder: QueueVideoItem[]) => void;
   isDark?: boolean;
   style?: ViewStyle;
 }
@@ -28,6 +29,7 @@ export const Queue: React.FC<QueueProps> = ({
   onVideoPress,
   onAddVideo,
   onVideoRemove,
+  onVideoReorder,
   isDark = true,
   style,
 }) => {
@@ -59,6 +61,7 @@ export const Queue: React.FC<QueueProps> = ({
           currentVideoId={currentVideoId}
           onVideoPress={onVideoPress}
           onVideoRemove={onVideoRemove}
+          onVideoReorder={onVideoReorder}
           isDark={isDark}
         />
       </QueueContainer>

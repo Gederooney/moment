@@ -3,7 +3,8 @@
  * TypeScript type definitions for the queue system
  */
 
-// Re-export the main video item type
+// Import and re-export the main video item type
+import type { QueueVideoItem } from './QueueItem';
 export type { QueueVideoItem } from './QueueItem';
 
 // Queue state management types

@@ -13,6 +13,7 @@ import {
   Animated,
   Keyboard,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -129,6 +130,8 @@ export default function MomentsScreen() {
   // Gestion du modal de nouvelle vidéo
   const showAddVideoModal = useCallback(() => {
     setIsModalVisible(true);
+    // Reset modal animation value for bottom sheet
+    modalAnimation.setValue(0);
     Animated.timing(modalAnimation, {
       toValue: 1,
       duration: 300,
@@ -330,7 +333,7 @@ export default function MomentsScreen() {
         })}
       />
 
-      {/* Add Video Modal */}
+      {/* Add Video Modal - Bottom Sheet Style */}
       <Modal
         visible={isModalVisible}
         transparent
@@ -338,111 +341,157 @@ export default function MomentsScreen() {
         onRequestClose={hideAddVideoModal}
         statusBarTranslucent
       >
-        <Animated.View
-          style={[
-            styles.modalOverlay,
-            {
-              opacity: modalAnimation,
-            },
-          ]}
+        <KeyboardAvoidingView
+          style={{ flex: 1, justifyContent: 'flex-end' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={hideAddVideoModal}
-          />
+          {/* Overlay */}
           <Animated.View
             style={[
-              styles.modalContainer,
+              StyleSheet.absoluteFillObject,
+              { backgroundColor: 'rgba(0, 0, 0, 0.6)', opacity: modalAnimation }
+            ]}
+          >
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={hideAddVideoModal}
+              activeOpacity={1}
+            />
+          </Animated.View>
+
+          {/* Bottom Sheet */}
+          <Animated.View
+            style={[
               {
-                transform: [
-                  {
-                    scale: modalAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.9, 1],
-                    }),
-                  },
-                ],
-                opacity: modalAnimation,
+                height: 320,
+                backgroundColor: Colors.background.secondary,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+                transform: [{
+                  translateY: modalAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [320, 0],
+                  })
+                }],
               },
             ]}
           >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Ajouter une vidéo</Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={hideAddVideoModal}
-              >
+            {/* Handle */}
+            <View style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: Colors.border.medium,
+              alignSelf: 'center',
+              marginTop: 12,
+              marginBottom: 20,
+            }} />
+
+            {/* Header */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+              <Text style={{ fontSize: 20, fontWeight: '600', color: Colors.text.primary }}>
+                Ajouter une vidéo
+              </Text>
+              <TouchableOpacity onPress={hideAddVideoModal} style={{ padding: 8 }}>
                 <Ionicons name="close" size={24} color={Colors.text.secondary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.modalContent}>
-              <Text style={styles.inputLabel}>URL YouTube</Text>
-              <View style={[
-                styles.urlInputContainer,
-                isUrlValid && styles.urlInputContainerValid,
-                videoUrl.length > 0 && !isUrlValid && styles.urlInputContainerError,
-              ]}>
+            {/* Content */}
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text.secondary, marginBottom: 8 }}>URL YouTube</Text>
+
+              <View style={{ position: 'relative', marginBottom: 8 }}>
                 <Ionicons
-                  name={isUrlValid ? "checkmark-circle" : "link"}
+                  name="logo-youtube"
                   size={20}
-                  color={isUrlValid ? Colors.success : Colors.text.secondary}
+                  color={Colors.primary}
+                  style={{ position: 'absolute', left: 12, top: 14, zIndex: 1 }}
                 />
                 <TextInput
-                  style={styles.urlInput}
-                  placeholder="https://youtube.com/watch?v=..."
-                  placeholderTextColor={Colors.text.tertiary}
+                  style={[
+                    {
+                      height: 48,
+                      borderRadius: 12,
+                      paddingHorizontal: 44,
+                      paddingVertical: 12,
+                      borderWidth: 1,
+                      fontSize: 14,
+                      color: Colors.text.primary,
+                      backgroundColor: Colors.background.tertiary,
+                    },
+                    isUrlValid && { borderColor: Colors.success, backgroundColor: Colors.background.white },
+                    videoUrl.length > 0 && !isUrlValid && { borderColor: Colors.error },
+                    !isUrlValid && !videoUrl.length && { borderColor: Colors.border.light },
+                  ]}
                   value={videoUrl}
                   onChangeText={setVideoUrl}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  placeholderTextColor={Colors.text.tertiary}
+                  keyboardType="url"
                   autoCapitalize="none"
                   autoCorrect={false}
-                  keyboardType="url"
                   returnKeyType="done"
                   onSubmitEditing={handleAddVideo}
                   editable={!isLoadingMetadata}
+                  multiline={false}
                 />
               </View>
 
               {videoUrl.length > 0 && !isUrlValid && (
-                <View style={styles.errorContainer}>
-                  <Ionicons name="warning" size={16} color={Colors.error} />
-                  <Text style={styles.errorText}>
-                    Veuillez saisir une URL YouTube valide
-                  </Text>
-                </View>
+                <Text style={{ fontSize: 12, color: Colors.error, marginBottom: 8, marginLeft: 4 }}>
+                  URL YouTube invalide
+                </Text>
               )}
 
-              <View style={styles.modalActions}>
+              {/* Buttons */}
+              <View style={{ flexDirection: 'row', marginTop: 'auto', paddingTop: 20, gap: 12 }}>
                 <TouchableOpacity
-                  style={styles.cancelButton}
+                  style={[
+                    {
+                      flex: 1,
+                      height: 48,
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#333333',
+                    },
+                    isLoadingMetadata && { opacity: 0.5 }
+                  ]}
                   onPress={hideAddVideoModal}
                   disabled={isLoadingMetadata}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.cancelButtonText}>Annuler</Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
+                    Annuler
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={[
-                    styles.launchButton,
-                    (!isUrlValid || isLoadingMetadata) && styles.launchButtonDisabled,
+                    {
+                      flex: 1,
+                      height: 48,
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: Colors.primary,
+                    },
+                    (!isUrlValid || isLoadingMetadata) && { opacity: 0.5 }
                   ]}
                   onPress={handleAddVideo}
                   disabled={!isUrlValid || isLoadingMetadata}
+                  activeOpacity={0.8}
                 >
-                  {isLoadingMetadata ? (
-                    <ActivityIndicator size="small" color={Colors.background.white} />
-                  ) : (
-                    <>
-                      <Ionicons name="play" size={20} color={Colors.background.white} />
-                      <Text style={styles.launchButtonText}>Lancer</Text>
-                    </>
-                  )}
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
+                    {isLoadingMetadata ? 'Ajout...' : 'Ajouter'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           </Animated.View>
-        </Animated.View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -580,135 +629,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.primary,
     fontWeight: '500',
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: Colors.background.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  modalContainer: {
-    backgroundColor: Colors.background.white,
-    borderRadius: 16,
-    width: '100%',
-    maxWidth: 400,
-    shadowColor: Colors.shadow.dark,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border.light,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text.primary,
-  },
-  modalCloseButton: {
-    padding: 4,
-  },
-  modalContent: {
-    padding: 24,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.primary,
-    marginBottom: 8,
-  },
-  urlInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.background.tertiary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 2,
-    borderColor: Colors.border.light,
-    gap: 12,
-  },
-  urlInputContainerValid: {
-    borderColor: Colors.success,
-    backgroundColor: Colors.background.white,
-  },
-  urlInputContainerError: {
-    borderColor: Colors.error,
-  },
-  urlInput: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.text.primary,
-    ...(Platform.OS === 'ios' && {
-      paddingVertical: 0,
-    }),
-  },
-  errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 6,
-  },
-  errorText: {
-    fontSize: 14,
-    color: Colors.error,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border.medium,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.text.secondary,
-  },
-  launchButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 8,
-  },
-  launchButtonDisabled: {
-    backgroundColor: Colors.text.tertiary,
-  },
-  launchButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.background.white,
   },
 });

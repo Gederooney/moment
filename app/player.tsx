@@ -19,6 +19,7 @@ import { Queue } from '../components/Queue/Queue';
 import { QueueVideoItem } from '../components/Queue/QueueItem';
 import { useMomentsContext } from '../contexts/MomentsContext';
 import { useTopBarContext } from '../contexts/TopBarContext';
+import { useSettings } from '../hooks/useSettings';
 import { extractVideoId, getVideoTitle } from '../utils/youtube';
 import { fetchYouTubeMetadataWithFallback } from '../services/youtubeMetadata';
 import { formatTime } from '../utils/time';
@@ -143,6 +144,8 @@ export default function PlayerScreen() {
     getVideoById,
   } = useMomentsContext();
 
+  const { settings } = useSettings();
+
   const {
     setVideoState: setTopBarVideoState,
     clearVideoState,
@@ -208,6 +211,43 @@ export default function PlayerScreen() {
 
     loadMetadata();
   }, [videoId, videoTitle, metadataLoaded, url, getVideoById]);
+
+  // Ajouter automatiquement la vidéo actuelle à la queue si elle n'y est pas
+  useEffect(() => {
+    if (videoId) {
+      // Attendre un peu pour que le titre soit chargé si nécessaire
+      const timeoutId = setTimeout(() => {
+        // Vérifier si la vidéo actuelle n'est pas déjà dans la playlist
+        const currentVideoInPlaylist = simplePlaylist.videos.find(v => v.videoId === videoId);
+
+        if (!currentVideoInPlaylist) {
+          // Utiliser les valeurs disponibles, même si certaines sont vides
+          const titleToUse = videoTitle || title || `Vidéo ${videoId}`;
+          const urlToUse = url || `https://youtube.com/watch?v=${videoId}`;
+
+          const newVideo = {
+            id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+            url: urlToUse,
+            title: titleToUse,
+            videoId: videoId,
+            thumbnail: videoThumbnail || thumbnail || '',
+            author: videoAuthor || author || '',
+          };
+
+          setSimplePlaylist(prev => ({
+            ...prev,
+            videos: [...prev.videos, newVideo],
+          }));
+
+          console.log('Added current video to playlist:', newVideo);
+        } else {
+          console.log('Current video already in playlist:', currentVideoInPlaylist);
+        }
+      }, 500); // Délai de 500ms pour laisser le temps aux métadonnées de se charger
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [videoId, videoTitle, title, videoThumbnail, thumbnail, videoAuthor, author, url, simplePlaylist.videos]);
 
   // Handle back navigation
   const handleBackNavigation = useCallback(() => {
@@ -345,7 +385,6 @@ export default function PlayerScreen() {
         videos: [...prev.videos, newVideo],
       }));
 
-      Alert.alert('Ajouté', 'Vidéo ajoutée à la playlist');
     } catch (error) {
       console.error('Error adding video:', error);
       Alert.alert('Erreur', 'Impossible d\'ajouter cette vidéo');
@@ -442,14 +481,43 @@ export default function PlayerScreen() {
 
   // Handle video end for simple playlist functionality
   const handleVideoEnd = useCallback(() => {
+    console.log('=== handleVideoEnd triggered ===');
+    console.log('Current videoId:', videoId);
+    console.log('Playlist videos:', simplePlaylist.videos.map(v => ({ id: v.id, videoId: v.videoId, title: v.title })));
+    console.log('Playlist length:', simplePlaylist.videos.length);
+    console.log('Current playlist index:', simplePlaylist.currentIndex);
+
     if (simplePlaylist.videos.length > 0) {
-      const nextIndex = simplePlaylist.currentIndex + 1;
-      if (nextIndex < simplePlaylist.videos.length) {
-        console.log('Video ended, playing next video from simple playlist');
-        playNext();
+      // Trouver l'index de la vidéo actuelle dans la playlist
+      const currentVideoIndex = simplePlaylist.videos.findIndex(v => v.videoId === videoId);
+      console.log('Current video index in playlist:', currentVideoIndex);
+
+      if (currentVideoIndex !== -1) {
+        const nextIndex = currentVideoIndex + 1;
+        console.log('Next index would be:', nextIndex);
+
+        if (nextIndex < simplePlaylist.videos.length) {
+          const nextVideo = simplePlaylist.videos[nextIndex];
+          console.log('Next video to play:', nextVideo);
+          console.log('Calling playVideo with index:', nextIndex);
+
+          // Ajouter un petit délai pour s'assurer que le player est prêt
+          setTimeout(() => {
+            playVideo(nextIndex);
+          }, 500);
+        } else {
+          console.log('Dernière vidéo terminée - pas de lecture automatique');
+          // Ne rien faire - la vidéo reste sur l'écran final
+        }
+      } else {
+        console.log('ERROR: Current video not found in playlist!');
+        console.log('Trying to match videoId:', videoId);
+        console.log('Available videoIds:', simplePlaylist.videos.map(v => v.videoId));
       }
+    } else {
+      console.log('Playlist is empty');
     }
-  }, [simplePlaylist, playNext]);
+  }, [simplePlaylist.videos, videoId, playVideo]);
 
   // Handler pour la sélection d'une vidéo dans la queue
   const handleQueueVideoPress = useCallback((queueVideo: QueueVideoItem) => {
@@ -463,6 +531,20 @@ export default function PlayerScreen() {
   const handleQueueVideoRemove = useCallback((queueVideo: QueueVideoItem) => {
     removeVideo(queueVideo.id);
   }, [removeVideo]);
+
+  // Handler pour réorganiser les vidéos dans la queue
+  const reorderVideos = useCallback((newOrder: QueueVideoItem[]) => {
+    // Convertir les QueueVideoItem vers le format de la playlist
+    const reorderedVideos = newOrder.map(queueItem => {
+      // Trouver la vidéo correspondante dans simplePlaylist
+      return simplePlaylist.videos.find(v => v.id === queueItem.id);
+    }).filter(Boolean) as typeof simplePlaylist.videos;
+
+    setSimplePlaylist(prev => ({
+      ...prev,
+      videos: reorderedVideos
+    }));
+  }, [simplePlaylist.videos]);
 
   const handleCaptureMoment = async () => {
     if (!videoState.isReady || !videoId || !playerRef.current) {
@@ -485,7 +567,7 @@ export default function PlayerScreen() {
       const moment = await captureFromContext(
         videoId,
         timeToCapture,
-        30,
+        settings.momentDuration,
         videoTitle || 'Sans titre',
         url || `https://youtube.com/watch?v=${videoId}`,
         videoThumbnail
@@ -576,40 +658,37 @@ export default function PlayerScreen() {
         />
       </View>
 
+      {/* Queue Component - Sortir du KeyboardAvoidingView pour éviter les conflits de gestes */}
+      <View style={styles.queueContainer}>
+        <Queue
+          videos={queueData}
+          currentVideoId={getCurrentVideoId()}
+          onVideoPress={handleQueueVideoPress}
+          onAddVideo={addVideoByUrl}
+          onVideoRemove={handleQueueVideoRemove}
+          onVideoReorder={reorderVideos}
+          isDark={isDark}
+        />
+      </View>
+
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Queue Component */}
-        {queueData.length > 0 && (
-          <View style={styles.queueContainer}>
-            <Queue
-              videos={queueData}
-              currentVideoId={getCurrentVideoId()}
-              onVideoPress={handleQueueVideoPress}
-              onAddVideo={addVideoByUrl}
-              onVideoRemove={handleQueueVideoRemove}
-              isDark={isDark}
+        {/* Zone des moments - ScrollView séparé */}
+        <ScrollView
+          style={styles.momentsScrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.momentsContent}
+        >
+          <View style={styles.momentsContainer}>
+            <MomentsList
+              moments={moments}
+              onPlayMoment={handlePlayMoment}
+              onDeleteMoment={handleDeleteMoment}
             />
           </View>
-        )}
-
-        {/* Zone des moments */}
-        <View style={styles.momentsSection}>
-          <ScrollView
-            style={styles.momentsScrollView}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.momentsContent}
-          >
-            <View style={styles.momentsContainer}>
-              <MomentsList
-                moments={moments}
-                onPlayMoment={handlePlayMoment}
-                onDeleteMoment={handleDeleteMoment}
-              />
-            </View>
-          </ScrollView>
-        </View>
+        </ScrollView>
 
         {/* Bouton de capture fixe en bas */}
         <View style={styles.captureButtonContainer}>
@@ -652,17 +731,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Queue container styles
+  // Queue container styles - Sortir du KeyboardAvoidingView
   queueContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-
-  // Section des moments
-  momentsSection: {
-    flex: 1,
+    maxHeight: 200, // Limiter la hauteur pour éviter qu'elle prenne trop de place
   },
 
   momentsScrollView: {

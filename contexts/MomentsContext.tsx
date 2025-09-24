@@ -97,8 +97,8 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
     videoUrl?: string,
     thumbnailUrl?: string
   ): Promise<CapturedMoment> => {
-    // Get duration from settings if not provided
-    const momentDuration = duration || await StorageService.getSetting('momentDuration', 30);
+    // Use the duration passed as parameter (which comes from settings)
+    const momentDuration = duration;
 
     const newMoment: CapturedMoment = {
       id: `${videoId}_${timestamp}_${Date.now()}`,

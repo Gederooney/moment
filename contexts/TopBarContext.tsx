@@ -21,7 +21,7 @@ interface TopBarProviderProps {
 
 export function TopBarProvider({ children }: TopBarProviderProps) {
   const [state, setState] = useState<TopBarState>({
-    title: 'PodCut',
+    title: 'Moments',
   });
 
   const backNavigationRef = useRef<(() => void) | null>(null);
@@ -40,7 +40,7 @@ export function TopBarProvider({ children }: TopBarProviderProps) {
   const clearVideoState = useCallback(() => {
     setState({
       currentVideoId: undefined,
-      title: 'PodCut',
+      title: 'Moments',
     });
   }, []);
 

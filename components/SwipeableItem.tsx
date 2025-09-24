@@ -31,7 +31,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
   deleteConfirmTitle,
   deleteConfirmMessage,
   containerStyle,
-  showArchiveAction = true,
+  showArchiveAction = false,
   swipeThreshold = 40,
 }) => {
   const {

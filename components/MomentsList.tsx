@@ -96,7 +96,9 @@ export const MomentsList: React.FC<MomentsListProps> = ({
       </Text>
       <View style={styles.list}>
         {moments.map((item, index) => (
-          renderMoment({ item, index })
+          <View key={item.id}>
+            {renderMoment({ item, index })}
+          </View>
         ))}
       </View>
     </View>

@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as SplashScreen from 'expo-splash-screen';
 import { MomentsProvider } from '../contexts/MomentsContext';
 import { TopBarProvider, useTopBarContext } from '../contexts/TopBarContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
@@ -11,19 +12,42 @@ import { View, StyleSheet } from 'react-native';
 import { cleanupMetadataCache } from '../services/youtubeMetadata';
 
 function AppContent() {
-  // Nettoyer le cache des métadonnées au démarrage
-  useEffect(() => {
-    cleanupMetadataCache().catch(error => {
-      console.warn('Failed to cleanup metadata cache:', error);
-    });
+  const [isReady, setIsReady] = useState(false);
+
+  const prepare = useCallback(async () => {
+    try {
+      // Garder le splash screen visible pendant qu'on initialise l'app
+      await SplashScreen.preventAutoHideAsync();
+
+      // Nettoyer le cache des métadonnées au démarrage
+      await cleanupMetadataCache();
+
+      // Autres initialisations si nécessaire...
+
+    } catch (e) {
+      console.warn('Failed to initialize app:', e);
+    } finally {
+      setIsReady(true);
+      // Masquer le splash screen natif
+      await SplashScreen.hideAsync();
+    }
   }, []);
+
+  useEffect(() => {
+    prepare();
+  }, [prepare]);
+
+  // Afficher le splash screen natif pendant l'initialisation
+  if (!isReady) {
+    return null;
+  }
 
   return (
     <>
       <StatusBar style="auto" />
       <View style={styles.container}>
         {/* TopBar fixe au-dessus de tout */}
-        <TopBar title="PodCut" />
+        <TopBar title="Moments" />
 
         {/* Navigation Stack */}
         <View style={styles.stackContainer}>

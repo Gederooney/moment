@@ -46,7 +46,7 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
       deleteConfirmTitle="Supprimer le moment"
       deleteConfirmMessage="Êtes-vous sûr de vouloir supprimer ce moment ?"
       containerStyle={styles.swipeableContainer}
-      showArchiveAction={true}
+      showArchiveAction={false}
     >
       <TouchableOpacity
         style={styles.container}

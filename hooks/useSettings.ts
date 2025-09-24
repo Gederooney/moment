@@ -197,7 +197,7 @@ export const useSettings = () => {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri, {
           mimeType: 'application/json',
-          dialogTitle: 'Exporter les moments PodCut',
+          dialogTitle: 'Exporter les moments Moments',
         });
       } else {
         Alert.alert('Succès', `Export sauvegardé dans: ${fileUri}`);
@@ -268,7 +268,7 @@ export const useSettings = () => {
   }, []);
 
   const reportBug = useCallback(() => {
-    const subject = 'Bug Report - PodCut Mobile';
+    const subject = 'Bug Report - Moments Mobile';
     const body = `Décrivez le problème rencontré:
 
 Version de l'app: 1.0.0

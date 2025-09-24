@@ -52,7 +52,7 @@ export default function HomeScreen() {
 
   // Mise à jour du titre dans la TopBar
   useEffect(() => {
-    setTitle('PodCut');
+    setTitle('Moments');
   }, [setTitle]);
 
   const handleNavigateToPlayer = useCallback(async (url: string) => {
@@ -104,8 +104,14 @@ export default function HomeScreen() {
           {interfaceState === 'initial' && (
             <View style={styles.initialState}>
               <View style={styles.logoContainer}>
-                <Ionicons name="cut" size={60} color={Colors.primary} />
-                <Text style={[styles.appTitle, { color: colors.text.primary }]}>PodCut</Text>
+                <Text style={[styles.appTitle, { color: colors.text.primary }]}>Moments</Text>
+              </View>
+
+              {/* Section CTA */}
+              <View style={styles.ctaContainer}>
+                <Text style={[styles.ctaSubtitle, { color: colors.text.secondary }]}>
+                  Capturez les meilleurs passages de vos vidéos et podcasts
+                </Text>
               </View>
 
               <View style={styles.inputContainer}>
@@ -148,6 +154,24 @@ export default function HomeScreen() {
               {error && (
                 <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text>
               )}
+
+              {/* Section Sources supportées */}
+              <View style={styles.supportedSourcesContainer}>
+                <Text style={[styles.supportedSourcesTitle, { color: colors.text.secondary }]}>
+                  Sources supportées
+                </Text>
+                <View style={styles.sourcesIconsContainer}>
+                  <View style={styles.sourceIcon}>
+                    <Ionicons name="logo-youtube" size={36} color="#FF0000" />
+                  </View>
+                  <View style={[styles.sourceIcon, { backgroundColor: '#1DB954' }]}>
+                    <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>S</Text>
+                  </View>
+                  <View style={styles.sourceIcon}>
+                    <Ionicons name="logo-apple" size={36} color={colors.text.primary} />
+                  </View>
+                </View>
+              </View>
             </View>
           )}
 
@@ -187,13 +211,34 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 60,
+    marginBottom: 40,
   },
   appTitle: {
     fontSize: 32,
     fontWeight: 'bold',
     marginTop: 16,
     letterSpacing: -0.5,
+  },
+
+  // Section CTA
+  ctaContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+    paddingHorizontal: 16,
+  },
+  ctaTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  ctaSubtitle: {
+    fontSize: 20,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 26,
+    opacity: 0.8,
   },
   inputContainer: {
     position: 'relative',
@@ -220,6 +265,33 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginLeft: 4,
     fontWeight: '500',
+  },
+
+  // Section Sources supportées
+  supportedSourcesContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  supportedSourcesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    opacity: 0.7,
+  },
+  sourcesIconsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+  },
+  sourceIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
   },
 
   // État Chargement

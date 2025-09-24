@@ -13,6 +13,8 @@ import {
   Animated,
   ViewStyle,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
@@ -73,7 +75,19 @@ export const QueueItem: React.FC<QueueItemProps> = ({
     style,
   ];
 
-  return (
+  const renderRightActions = () => {
+    return (
+      <TouchableOpacity
+        style={styles.deleteAction}
+        onPress={() => onRemove?.(item)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="trash" size={20} color="#fff" />
+      </TouchableOpacity>
+    );
+  };
+
+  const content = (
     <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
       <TouchableOpacity
         style={containerStyle}
@@ -139,6 +153,17 @@ export const QueueItem: React.FC<QueueItemProps> = ({
         </View>
       </TouchableOpacity>
     </Animated.View>
+  );
+
+  // Ne pas permettre le swipe sur la vidéo en cours
+  if (isCurrentVideo) {
+    return content;
+  }
+
+  return (
+    <Swipeable renderRightActions={renderRightActions}>
+      {content}
+    </Swipeable>
   );
 };
 
@@ -223,5 +248,13 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     fontSize: 10,
     opacity: 0.7,
+  },
+  deleteAction: {
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 8,
+    marginVertical: 8,
   },
 });
