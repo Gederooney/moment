@@ -263,11 +263,16 @@ export const Button: React.FC<ButtonProps> = ({
     if (iconSize) return iconSize;
 
     switch (size) {
-      case 'small': return 16;
-      case 'medium': return 20;
-      case 'large': return 24;
-      case 'driving': return 32;
-      default: return 20;
+      case 'small':
+        return 16;
+      case 'medium':
+        return 20;
+      case 'large':
+        return 24;
+      case 'driving':
+        return 32;
+      default:
+        return 20;
     }
   };
 
@@ -279,14 +284,9 @@ export const Button: React.FC<ButtonProps> = ({
     if (loading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size={size === 'small' ? 'small' : 'large'}
-            color={iconColor}
-          />
+          <ActivityIndicator size={size === 'small' ? 'small' : 'large'} color={iconColor} />
           {size !== 'small' && (
-            <Text style={[textStyles, textStyle, { marginLeft: Spacing.sm }]}>
-              Chargement...
-            </Text>
+            <Text style={[textStyles, textStyle, { marginLeft: Spacing.sm }]}>Chargement...</Text>
           )}
         </View>
       );
@@ -306,14 +306,8 @@ export const Button: React.FC<ButtonProps> = ({
 
         {/* Text Content */}
         <View style={subtitle ? styles.textColumn : undefined}>
-          <Text style={[textStyles, textStyle]}>
-            {title}
-          </Text>
-          {subtitle && (
-            <Text style={[textStyles, styles.subtitle, textStyle]}>
-              {subtitle}
-            </Text>
-          )}
+          <Text style={[textStyles, textStyle]}>{title}</Text>
+          {subtitle && <Text style={[textStyles, styles.subtitle, textStyle]}>{subtitle}</Text>}
         </View>
 
         {/* Right Icon */}
@@ -330,19 +324,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <Animated.View
-      style={[
-        fullWidth && styles.fullWidth,
-        { transform: [{ scale: scaleValue }] },
-      ]}
-    >
+    <Animated.View style={[fullWidth && styles.fullWidth, { transform: [{ scale: scaleValue }] }]}>
       <TouchableOpacity
-        style={[
-          buttonStyles,
-          fullWidth && styles.fullWidth,
-          disabled && styles.disabled,
-          style,
-        ]}
+        style={[buttonStyles, fullWidth && styles.fullWidth, disabled && styles.disabled, style]}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}

@@ -21,7 +21,6 @@ export class StorageService {
       const historyJson = await AsyncStorage.getItem(this.HISTORY_KEY);
       return historyJson ? JSON.parse(historyJson) : [];
     } catch (error) {
-      console.error('Error getting download history:', error);
       return [];
     }
   }
@@ -31,9 +30,7 @@ export class StorageService {
       const history = await this.getDownloadHistory();
       const updatedHistory = [download, ...history.slice(0, 49)]; // Keep last 50 downloads
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(updatedHistory));
-    } catch (error) {
-      console.error('Error adding to history:', error);
-    }
+    } catch (error) {}
   }
 
   static async removeFromHistory(id: string): Promise<void> {
@@ -41,17 +38,13 @@ export class StorageService {
       const history = await this.getDownloadHistory();
       const updatedHistory = history.filter(item => item.id !== id);
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(updatedHistory));
-    } catch (error) {
-      console.error('Error removing from history:', error);
-    }
+    } catch (error) {}
   }
 
   static async clearHistory(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.HISTORY_KEY);
-    } catch (error) {
-      console.error('Error clearing history:', error);
-    }
+    } catch (error) {}
   }
 
   // Settings Management
@@ -60,7 +53,6 @@ export class StorageService {
       const settingsJson = await AsyncStorage.getItem(this.SETTINGS_KEY);
       return settingsJson ? JSON.parse(settingsJson) : {};
     } catch (error) {
-      console.error('Error getting settings:', error);
       return {};
     }
   }
@@ -70,9 +62,7 @@ export class StorageService {
       const settings = await this.getSettings();
       settings[key] = value;
       await AsyncStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error('Error setting config:', error);
-    }
+    } catch (error) {}
   }
 
   static async getSetting<T>(key: string, defaultValue: T): Promise<T> {
@@ -80,7 +70,6 @@ export class StorageService {
       const settings = await this.getSettings();
       return settings[key] !== undefined ? settings[key] : defaultValue;
     } catch (error) {
-      console.error('Error getting setting:', error);
       return defaultValue;
     }
   }

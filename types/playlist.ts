@@ -38,7 +38,10 @@ export interface PlaylistState {
 export interface PlaylistActions {
   createPlaylist: (name: string, description?: string) => Promise<string>;
   deletePlaylist: (playlistId: string) => Promise<void>;
-  addVideoToPlaylist: (playlistId: string, video: Omit<PlaylistVideo, 'id' | 'order' | 'addedAt'>) => Promise<void>;
+  addVideoToPlaylist: (
+    playlistId: string,
+    video: Omit<PlaylistVideo, 'id' | 'order' | 'addedAt'>
+  ) => Promise<void>;
   removeVideoFromPlaylist: (playlistId: string, videoId: string) => Promise<void>;
   reorderVideos: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
   setActivePlaylist: (playlistId: string) => Promise<void>;

@@ -1,14 +1,10 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { CapturedMoment } from '../types/moment';
 import { SwipeableItem } from './SwipeableItem';
+import { formatDuration } from '../utils/time';
 
 interface SwipeableMomentItemProps {
   moment: CapturedMoment;
@@ -23,7 +19,6 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
   onDelete,
   showNewBadge = false,
 }) => {
-
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -38,7 +33,6 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
       minute: '2-digit',
     }).format(date);
   };
-
 
   return (
     <SwipeableItem
@@ -63,24 +57,18 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
 
           <View style={styles.momentInfo}>
             <View style={styles.momentTitleRow}>
-              <Text style={styles.momentTitle}>
-                Moment à {formatTime(moment.timestamp)}
-              </Text>
+              <Text style={styles.momentTitle}>Moment à {formatTime(moment.timestamp)}</Text>
               {showNewBadge && (
                 <View style={styles.newBadge}>
                   <Text style={styles.newBadgeText}>Nouveau!</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.momentMeta}>
-              Capturé le {formatDateTime(moment.createdAt)}
-            </Text>
+            <Text style={styles.momentMeta}>Capturé le {formatDateTime(moment.createdAt)}</Text>
           </View>
 
           <View style={styles.duration}>
-            <Text style={styles.durationText}>
-              {moment.duration}s
-            </Text>
+            <Text style={styles.durationText}>{formatDuration(moment.duration)}</Text>
           </View>
 
           {/* Swipe hint indicator */}

@@ -1,11 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, getColors } from '../constants/Colors';
 import { usePlaylist } from '../contexts/PlaylistContext';
@@ -59,7 +53,9 @@ export function PlaylistControls({
       <View style={styles.compactContainer}>
         {/* Progress indicator */}
         {progress && (
-          <View style={[styles.progressContainer, { backgroundColor: colors.background.secondary }]}>
+          <View
+            style={[styles.progressContainer, { backgroundColor: colors.background.secondary }]}
+          >
             <Text style={[styles.progressText, { color: colors.text.secondary }]}>
               {progress.current}/{progress.total}
             </Text>
@@ -163,10 +159,7 @@ export function PlaylistControls({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[
-                styles.modeButton,
-                currentState.repeat && { backgroundColor: colors.accent },
-              ]}
+              style={[styles.modeButton, currentState.repeat && { backgroundColor: colors.accent }]}
               onPress={toggleRepeat}
             >
               <Ionicons

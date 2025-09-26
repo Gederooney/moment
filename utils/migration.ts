@@ -46,18 +46,21 @@ export const migrateMomentsStorage = async (): Promise<MigrationResult> => {
     console.log(`📊 Found ${oldMoments.length} moments to migrate`);
 
     // 2. Grouper les moments par videoId
-    const momentsByVideo = oldMoments.reduce((acc, moment) => {
-      if (!moment.videoId) {
-        result.errors.push(`Moment ${moment.id} has no videoId - skipping`);
-        return acc;
-      }
+    const momentsByVideo = oldMoments.reduce(
+      (acc, moment) => {
+        if (!moment.videoId) {
+          result.errors.push(`Moment ${moment.id} has no videoId - skipping`);
+          return acc;
+        }
 
-      if (!acc[moment.videoId]) {
-        acc[moment.videoId] = [];
-      }
-      acc[moment.videoId].push(moment);
-      return acc;
-    }, {} as Record<string, CapturedMoment[]>);
+        if (!acc[moment.videoId]) {
+          acc[moment.videoId] = [];
+        }
+        acc[moment.videoId].push(moment);
+        return acc;
+      },
+      {} as Record<string, CapturedMoment[]>
+    );
 
     console.log(`📦 Grouped into ${Object.keys(momentsByVideo).length} videos`);
 
@@ -113,7 +116,6 @@ export const migrateMomentsStorage = async (): Promise<MigrationResult> => {
 
         result.migratedMoments += videoMoments.length;
         console.log(`✅ Migrated ${videoMoments.length} moments for video ${videoId}`);
-
       } catch (error) {
         const errorMsg = `Failed to migrate video ${videoId}: ${error}`;
         result.errors.push(errorMsg);
@@ -126,12 +128,15 @@ export const migrateMomentsStorage = async (): Promise<MigrationResult> => {
 
     // 7. Nettoyer l'ancien stockage (en option - commenté pour sécurité)
     // await AsyncStorage.removeItem(OLD_MOMENTS_KEY);
-    console.log('⚠️  Old moments data preserved for safety. Remove manually if migration successful.');
+    console.log(
+      '⚠️  Old moments data preserved for safety. Remove manually if migration successful.'
+    );
 
     result.success = true;
     console.log(`🎉 Migration completed successfully!`);
-    console.log(`📊 Migrated ${result.migratedVideos} videos and ${result.migratedMoments} moments`);
-
+    console.log(
+      `📊 Migrated ${result.migratedVideos} videos and ${result.migratedMoments} moments`
+    );
   } catch (error) {
     const errorMsg = `Migration failed: ${error}`;
     result.errors.push(errorMsg);

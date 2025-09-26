@@ -20,7 +20,7 @@ export const useVideoHistory = () => {
 
       // Load moments for each video
       const videosWithMoments = await Promise.all(
-        parsedVideos.map(async (video) => {
+        parsedVideos.map(async video => {
           const momentsData = await AsyncStorage.getItem(`${MOMENTS_STORAGE_KEY}_${video.id}`);
           const moments: CapturedMoment[] = momentsData ? JSON.parse(momentsData) : [];
 
@@ -41,86 +41,88 @@ export const useVideoHistory = () => {
 
       setVideos(videosWithMoments);
     } catch (error) {
-      console.error('Error loading video history:', error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   // Add or update a video in history
-  const addVideoToHistory = useCallback(async (videoData: {
-    id: string;
-    title: string;
-    thumbnail: string;
-    url: string;
-    author?: string;
-    thumbnailFromApi?: string;
-    metadataLoadedFromApi?: boolean;
-  }) => {
-    try {
-      // Load current data from AsyncStorage to avoid synchronization issues
-      const videosData = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
-      const currentVideos: VideoWithMoments[] = videosData ? JSON.parse(videosData) : [];
+  const addVideoToHistory = useCallback(
+    async (videoData: {
+      id: string;
+      title: string;
+      thumbnail: string;
+      url: string;
+      author?: string;
+      thumbnailFromApi?: string;
+      metadataLoadedFromApi?: boolean;
+    }) => {
+      try {
+        // Load current data from AsyncStorage to avoid synchronization issues
+        const videosData = await AsyncStorage.getItem(HISTORY_STORAGE_KEY);
+        const currentVideos: VideoWithMoments[] = videosData ? JSON.parse(videosData) : [];
 
-      // Convert date strings back to Date objects for existing videos
-      const parsedCurrentVideos = currentVideos.map(video => ({
-        ...video,
-        addedAt: new Date(video.addedAt),
-        moments: video.moments?.map(moment => ({
-          ...moment,
-          createdAt: new Date(moment.createdAt),
-        })) || [],
-      }));
+        // Convert date strings back to Date objects for existing videos
+        const parsedCurrentVideos = currentVideos.map(video => ({
+          ...video,
+          addedAt: new Date(video.addedAt),
+          moments:
+            video.moments?.map(moment => ({
+              ...moment,
+              createdAt: new Date(moment.createdAt),
+            })) || [],
+        }));
 
-      // Check if video already exists in the fresh data from storage
-      const existingVideoIndex = parsedCurrentVideos.findIndex(v => v.id === videoData.id);
+        // Check if video already exists in the fresh data from storage
+        const existingVideoIndex = parsedCurrentVideos.findIndex(v => v.id === videoData.id);
 
-      let updatedVideos: VideoWithMoments[];
+        let updatedVideos: VideoWithMoments[];
 
-      if (existingVideoIndex >= 0) {
-        // Update existing video's addedAt date and metadata
-        updatedVideos = [...parsedCurrentVideos];
-        updatedVideos[existingVideoIndex] = {
-          ...updatedVideos[existingVideoIndex],
-          ...videoData,
-          addedAt: new Date(),
-          // Preserve existing moments
-          moments: updatedVideos[existingVideoIndex].moments,
-        };
+        if (existingVideoIndex >= 0) {
+          // Update existing video's addedAt date and metadata
+          updatedVideos = [...parsedCurrentVideos];
+          updatedVideos[existingVideoIndex] = {
+            ...updatedVideos[existingVideoIndex],
+            ...videoData,
+            addedAt: new Date(),
+            // Preserve existing moments
+            moments: updatedVideos[existingVideoIndex].moments,
+          };
 
-        // Move to top
-        const [updated] = updatedVideos.splice(existingVideoIndex, 1);
-        updatedVideos.unshift(updated);
-      } else {
-        // Add new video with enriched metadata
-        const newVideo: VideoWithMoments = {
-          ...videoData,
-          addedAt: new Date(),
-          moments: [],
-          author: videoData.author,
-          thumbnailFromApi: videoData.thumbnailFromApi,
-          metadataLoadedFromApi: videoData.metadataLoadedFromApi || false,
-        };
+          // Move to top
+          const [updated] = updatedVideos.splice(existingVideoIndex, 1);
+          updatedVideos.unshift(updated);
+        } else {
+          // Add new video with enriched metadata
+          const newVideo: VideoWithMoments = {
+            ...videoData,
+            addedAt: new Date(),
+            moments: [],
+            author: videoData.author,
+            thumbnailFromApi: videoData.thumbnailFromApi,
+            metadataLoadedFromApi: videoData.metadataLoadedFromApi || false,
+          };
 
-        updatedVideos = [newVideo, ...parsedCurrentVideos];
+          updatedVideos = [newVideo, ...parsedCurrentVideos];
+        }
+
+        // Save to storage first
+        await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
+
+        // Then update React state
+        setVideos(updatedVideos);
+      } catch (error) {
       }
-
-      // Save to storage first
-      await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
-
-      // Then update React state
-      setVideos(updatedVideos);
-    } catch (error) {
-      console.error('Error adding video to history:', error);
-    }
-  }, []);
+    },
+    []
+  );
 
   // Add moment to a video
   const addMomentToVideo = useCallback(async (videoId: string, moment: CapturedMoment) => {
     try {
       // Use functional update to properly handle async state update
-      await new Promise<void>((resolve) => {
-        setVideos((currentVideos) => {
+      await new Promise<void>(resolve => {
+        setVideos(currentVideos => {
           const updatedVideos = currentVideos.map(video => {
             if (video.id === videoId) {
               const updatedMoments = [moment, ...video.moments];
@@ -134,13 +136,15 @@ export const useVideoHistory = () => {
             try {
               // Save moments to storage
               const videoMoments = updatedVideos.find(v => v.id === videoId)?.moments || [];
-              await AsyncStorage.setItem(`${MOMENTS_STORAGE_KEY}_${videoId}`, JSON.stringify(videoMoments));
+              await AsyncStorage.setItem(
+                `${MOMENTS_STORAGE_KEY}_${videoId}`,
+                JSON.stringify(videoMoments)
+              );
 
               // Update video history
               await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
               resolve();
             } catch (error) {
-              console.error('Error saving to storage:', error);
               resolve(); // Resolve even on error to not block
             }
           })();
@@ -149,88 +153,97 @@ export const useVideoHistory = () => {
         });
       });
     } catch (error) {
-      console.error('Error adding moment to video:', error);
     }
   }, []);
 
   // Delete a moment
-  const deleteMoment = useCallback(async (momentId: string) => {
-    try {
-      // Map videos and filter moments, then remove videos with no moments
-      const updatedVideos = videos
-        .map(video => ({
-          ...video,
-          moments: video.moments.filter(moment => moment.id !== momentId),
-        }))
-        // Remove videos that have no moments left
-        .filter(video => video.moments.length > 0);
+  const deleteMoment = useCallback(
+    async (momentId: string) => {
+      try {
+        // Map videos and filter moments, then remove videos with no moments
+        const updatedVideos = videos
+          .map(video => ({
+            ...video,
+            moments: video.moments.filter(moment => moment.id !== momentId),
+          }))
+          // Remove videos that have no moments left
+          .filter(video => video.moments.length > 0);
 
-      setVideos(updatedVideos);
+        setVideos(updatedVideos);
 
-      // Save updated moments for each remaining video
-      await Promise.all(
-        updatedVideos.map(async (video) => {
-          await AsyncStorage.setItem(`${MOMENTS_STORAGE_KEY}_${video.id}`, JSON.stringify(video.moments));
-        })
-      );
+        // Save updated moments for each remaining video
+        await Promise.all(
+          updatedVideos.map(async video => {
+            await AsyncStorage.setItem(
+              `${MOMENTS_STORAGE_KEY}_${video.id}`,
+              JSON.stringify(video.moments)
+            );
+          })
+        );
 
-      // Clean up storage for removed videos (those with no moments)
-      const removedVideos = videos.filter(v =>
-        v.moments.filter(m => m.id !== momentId).length === 0
-      );
-      await Promise.all(
-        removedVideos.map(async (video) => {
-          await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${video.id}`);
-        })
-      );
+        // Clean up storage for removed videos (those with no moments)
+        const removedVideos = videos.filter(
+          v => v.moments.filter(m => m.id !== momentId).length === 0
+        );
+        await Promise.all(
+          removedVideos.map(async video => {
+            await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${video.id}`);
+          })
+        );
 
-      // Update video history
-      await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
-    } catch (error) {
-      console.error('Error deleting moment:', error);
-    }
-  }, [videos]);
+        // Update video history
+        await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
+      } catch (error) {
+      }
+    },
+    [videos]
+  );
 
   // Delete all moments for a video (removes the video entirely)
-  const deleteAllMomentsForVideo = useCallback(async (videoId: string) => {
-    try {
-      // Remove the video entirely since it will have no moments
-      const updatedVideos = videos.filter(video => video.id !== videoId);
+  const deleteAllMomentsForVideo = useCallback(
+    async (videoId: string) => {
+      try {
+        // Remove the video entirely since it will have no moments
+        const updatedVideos = videos.filter(video => video.id !== videoId);
 
-      setVideos(updatedVideos);
+        setVideos(updatedVideos);
 
-      // Clear moments storage for this video
-      await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${videoId}`);
+        // Clear moments storage for this video
+        await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${videoId}`);
 
-      // Update video history
-      await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
-    } catch (error) {
-      console.error('Error deleting all moments for video:', error);
-    }
-  }, [videos]);
+        // Update video history
+        await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
+      } catch (error) {
+      }
+    },
+    [videos]
+  );
 
   // Delete a video and all its moments
-  const deleteVideo = useCallback(async (videoId: string) => {
-    try {
-      const updatedVideos = videos.filter(video => video.id !== videoId);
-      setVideos(updatedVideos);
+  const deleteVideo = useCallback(
+    async (videoId: string) => {
+      try {
+        const updatedVideos = videos.filter(video => video.id !== videoId);
+        setVideos(updatedVideos);
 
-      // Remove from storage
-      await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${videoId}`);
-      await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
-    } catch (error) {
-      console.error('Error deleting video:', error);
-    }
-  }, [videos]);
+        // Remove from storage
+        await AsyncStorage.removeItem(`${MOMENTS_STORAGE_KEY}_${videoId}`);
+        await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(updatedVideos));
+      } catch (error) {
+      }
+    },
+    [videos]
+  );
 
   // Search videos by title
-  const searchVideos = useCallback((query: string): VideoWithMoments[] => {
-    if (!query.trim()) return videos;
+  const searchVideos = useCallback(
+    (query: string): VideoWithMoments[] => {
+      if (!query.trim()) return videos;
 
-    return videos.filter(video =>
-      video.title.toLowerCase().includes(query.toLowerCase())
-    );
-  }, [videos]);
+      return videos.filter(video => video.title.toLowerCase().includes(query.toLowerCase()));
+    },
+    [videos]
+  );
 
   // Clear all history
   const clearAllHistory = useCallback(async () => {
@@ -245,14 +258,16 @@ export const useVideoHistory = () => {
       const momentKeys = keys.filter(key => key.startsWith(MOMENTS_STORAGE_KEY));
       await AsyncStorage.multiRemove(momentKeys);
     } catch (error) {
-      console.error('Error clearing history:', error);
     }
   }, []);
 
   // Get video by ID
-  const getVideoById = useCallback((videoId: string): VideoWithMoments | undefined => {
-    return videos.find(video => video.id === videoId);
-  }, [videos]);
+  const getVideoById = useCallback(
+    (videoId: string): VideoWithMoments | undefined => {
+      return videos.find(video => video.id === videoId);
+    },
+    [videos]
+  );
 
   // Get total moments count
   const getTotalMomentsCount = useCallback((): number => {

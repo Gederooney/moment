@@ -5,12 +5,7 @@
  */
 
 import React, { ReactNode } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
@@ -119,21 +114,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View
-      style={[
-        styles.container,
-        compact && styles.containerCompact,
-        style,
-      ]}
+      style={[styles.container, compact && styles.containerCompact, style]}
       accessibilityLabel={accessibilityLabel || title}
     >
       {/* Illustration or Icon */}
       <View style={styles.visualContainer}>
         {illustration || (
-          <Ionicons
-            name={iconName}
-            size={iconSize}
-            color={variantConfig.iconColor}
-          />
+          <Ionicons name={iconName} size={iconSize} color={variantConfig.iconColor} />
         )}
       </View>
 
@@ -225,7 +212,7 @@ export const NoSearchResultsEmptyState: React.FC<{
     title="Aucun résultat"
     description={`Aucune vidéo ne correspond à "${searchQuery}"`}
     primaryAction={{
-      title: "Effacer la recherche",
+      title: 'Effacer la recherche',
       onPress: onClearSearch,
       icon: 'close-outline',
     }}
@@ -245,11 +232,15 @@ export const NoMomentsEmptyState: React.FC<{
     icon="radio-button-off-outline"
     title="Aucun moment capturé"
     description="Capturez vos moments préférés pendant la lecture de la vidéo"
-    primaryAction={onCaptureMoment ? {
-      title: "Capturer maintenant",
-      onPress: onCaptureMoment,
-      icon: 'radio-button-on-outline',
-    } : undefined}
+    primaryAction={
+      onCaptureMoment
+        ? {
+            title: 'Capturer maintenant',
+            onPress: onCaptureMoment,
+            icon: 'radio-button-on-outline',
+          }
+        : undefined
+    }
     variant="default"
     isDark={isDark}
     compact={compact}
@@ -267,12 +258,12 @@ export const VideoErrorEmptyState: React.FC<{
     title="Erreur de chargement"
     description="Impossible de charger cette vidéo. Vérifiez votre connexion internet."
     primaryAction={{
-      title: "Réessayer",
+      title: 'Réessayer',
       onPress: onRetry,
       icon: 'refresh-outline',
     }}
     secondaryAction={{
-      title: "Retour",
+      title: 'Retour',
       onPress: onGoBack,
       icon: 'arrow-back-outline',
     }}
@@ -286,7 +277,7 @@ export const LoadingEmptyState: React.FC<{
   message?: string;
   isDark?: boolean;
   compact?: boolean;
-}> = ({ message = "Chargement...", isDark = false, compact = false }) => (
+}> = ({ message = 'Chargement...', isDark = false, compact = false }) => (
   <EmptyState
     icon="hourglass-outline"
     title={message}
@@ -308,11 +299,15 @@ export const SuccessEmptyState: React.FC<{
     icon="checkmark-circle-outline"
     title={title}
     description={description}
-    primaryAction={onContinue ? {
-      title: "Continuer",
-      onPress: onContinue,
-      icon: 'arrow-forward-outline',
-    } : undefined}
+    primaryAction={
+      onContinue
+        ? {
+            title: 'Continuer',
+            onPress: onContinue,
+            icon: 'arrow-forward-outline',
+          }
+        : undefined
+    }
     variant="success"
     isDark={isDark}
   />

@@ -56,22 +56,23 @@ export const useSettings = () => {
         setSettings({ ...DEFAULT_SETTINGS, ...parsed });
       }
     } catch (error) {
-      console.error('Error loading settings:', error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   // Save settings to storage
-  const saveSettings = useCallback(async (newSettings: Partial<AppSettings>) => {
-    try {
-      const updatedSettings = { ...settings, ...newSettings };
-      setSettings(updatedSettings);
-      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
-    } catch (error) {
-      console.error('Error saving settings:', error);
-    }
-  }, [settings]);
+  const saveSettings = useCallback(
+    async (newSettings: Partial<AppSettings>) => {
+      try {
+        const updatedSettings = { ...settings, ...newSettings };
+        setSettings(updatedSettings);
+        await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+      } catch (error) {
+      }
+    },
+    [settings]
+  );
 
   // Calculate storage statistics
   const calculateStorageStats = useCallback(async () => {
@@ -88,7 +89,6 @@ export const useSettings = () => {
             totalSpace = (dirInfo as any).size || 0;
           }
         } catch (error) {
-          console.log('Could not get app directory size:', error);
         }
       }
 
@@ -101,7 +101,6 @@ export const useSettings = () => {
             cacheSize = (cacheInfo as any).size || 0;
           }
         } catch (error) {
-          console.log('Could not get cache directory size:', error);
         }
       }
 
@@ -112,7 +111,6 @@ export const useSettings = () => {
         cacheSize,
       });
     } catch (error) {
-      console.error('Error calculating storage stats:', error);
     }
   }, [videos, getTotalMomentsCount]);
 
@@ -129,14 +127,12 @@ export const useSettings = () => {
             )
           );
         } catch (error) {
-          console.log('Could not clear cache:', error);
         }
       }
       await calculateStorageStats();
       Alert.alert('Succès', 'Le cache a été effacé avec succès.');
     } catch (error) {
-      console.error('Error clearing cache:', error);
-      Alert.alert('Erreur', 'Impossible d\'effacer le cache.');
+      Alert.alert('Erreur', "Impossible d'effacer le cache.");
     }
   }, [calculateStorageStats]);
 
@@ -144,7 +140,7 @@ export const useSettings = () => {
   const clearAllData = useCallback(() => {
     Alert.alert(
       'Effacer toutes les données',
-      'Êtes-vous sûr de vouloir supprimer tout l\'historique et tous les moments ? Cette action est irréversible.',
+      "Êtes-vous sûr de vouloir supprimer tout l'historique et tous les moments ? Cette action est irréversible.",
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -157,8 +153,7 @@ export const useSettings = () => {
               await calculateStorageStats();
               Alert.alert('Succès', 'Toutes les données ont été effacées.');
             } catch (error) {
-              console.error('Error clearing all data:', error);
-              Alert.alert('Erreur', 'Impossible d\'effacer toutes les données.');
+              Alert.alert('Erreur', "Impossible d'effacer toutes les données.");
             }
           },
         },
@@ -203,8 +198,7 @@ export const useSettings = () => {
         Alert.alert('Succès', `Export sauvegardé dans: ${fileUri}`);
       }
     } catch (error) {
-      console.error('Error exporting moments:', error);
-      Alert.alert('Erreur', 'Impossible d\'exporter les moments.');
+      Alert.alert('Erreur', "Impossible d'exporter les moments.");
     }
   }, [videos, settings]);
 
@@ -244,8 +238,7 @@ export const useSettings = () => {
                   // For now, show success message
                   Alert.alert('Succès', 'Import en cours de développement...');
                 } catch (error) {
-                  console.error('Error importing data:', error);
-                  Alert.alert('Erreur', 'Impossible d\'importer les données.');
+                  Alert.alert('Erreur', "Impossible d'importer les données.");
                 }
               },
             },
@@ -253,8 +246,7 @@ export const useSettings = () => {
         );
       }
     } catch (error) {
-      console.error('Error importing moments:', error);
-      Alert.alert('Erreur', 'Fichier invalide ou erreur d\'import.');
+      Alert.alert('Erreur', "Fichier invalide ou erreur d'import.");
     }
   }, [clearAllHistory]);
 
@@ -281,14 +273,17 @@ Statistiques:
 Détails du problème:
 `;
 
-    Linking.openURL(`mailto:support@podcut.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    Linking.openURL(
+      `mailto:support@podcut.app?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    );
   }, [storageStats]);
 
   const rateApp = useCallback(() => {
     const appId = Platform.OS === 'ios' ? 'id123456789' : 'com.podcut.mobile';
-    const url = Platform.OS === 'ios'
-      ? `https://apps.apple.com/app/${appId}?action=write-review`
-      : `market://details?id=${appId}`;
+    const url =
+      Platform.OS === 'ios'
+        ? `https://apps.apple.com/app/${appId}?action=write-review`
+        : `market://details?id=${appId}`;
 
     Linking.openURL(url);
   }, []);

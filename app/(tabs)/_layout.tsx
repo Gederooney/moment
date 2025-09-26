@@ -29,11 +29,7 @@ export default function TabsLayout() {
         options={{
           title: 'Accueil',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={focused ? 'home' : 'home-outline'}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -42,24 +38,16 @@ export default function TabsLayout() {
         options={{
           title: 'Moments',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={focused ? 'bookmark' : 'bookmark-outline'}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Paramètres',
+          title: 'Profile',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons
-              name={focused ? 'settings' : 'settings-outline'}
-              size={size}
-              color={color}
-            />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
           ),
         }}
       />

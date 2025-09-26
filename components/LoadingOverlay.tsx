@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  Modal,
-} from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet, Modal } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 interface LoadingOverlayProps {
@@ -15,11 +9,7 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ visible, message = 'Chargement...' }: LoadingOverlayProps) {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-    >
+    <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.container}>
           <ActivityIndicator size="large" color={Colors.primary} />

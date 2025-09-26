@@ -1,14 +1,9 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { CapturedMoment } from '../types/moment';
+import { formatDuration } from '../utils/time';
 
 interface MomentHistoryItemProps {
   moment: CapturedMoment;
@@ -23,7 +18,6 @@ export const MomentHistoryItem: React.FC<MomentHistoryItemProps> = ({
   onDelete,
   showNewBadge = false,
 }) => {
-
   const handleDelete = () => {
     Alert.alert(
       'Supprimer le moment',
@@ -58,13 +52,8 @@ export const MomentHistoryItem: React.FC<MomentHistoryItemProps> = ({
     }).format(date);
   };
 
-
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPlay}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.container} onPress={onPlay} activeOpacity={0.7}>
       <View style={styles.content}>
         <TouchableOpacity style={styles.playButton} onPress={onPlay}>
           <Ionicons name="play" size={16} color={Colors.primary} />
@@ -72,31 +61,25 @@ export const MomentHistoryItem: React.FC<MomentHistoryItemProps> = ({
 
         <View style={styles.momentInfo}>
           <View style={styles.momentTitleRow}>
-            <Text style={styles.momentTitle}>
-              Moment à {formatTime(moment.timestamp)}
-            </Text>
+            <Text style={styles.momentTitle}>Moment à {formatTime(moment.timestamp)}</Text>
             {showNewBadge && (
               <View style={styles.newBadge}>
                 <Text style={styles.newBadgeText}>Nouveau!</Text>
               </View>
             )}
           </View>
-          <Text style={styles.momentMeta}>
-            Capturé le {formatDateTime(moment.createdAt)}
-          </Text>
+          <Text style={styles.momentMeta}>Capturé le {formatDateTime(moment.createdAt)}</Text>
         </View>
 
         <View style={styles.duration}>
-          <Text style={styles.durationText}>
-            {moment.duration}s
-          </Text>
+          <Text style={styles.durationText}>{formatDuration(moment.duration)}</Text>
         </View>
       </View>
 
       {/* Bouton delete simple comme dans MomentsList */}
       <TouchableOpacity
         style={styles.deleteButton}
-        onPress={(e) => {
+        onPress={e => {
           e.stopPropagation();
           handleDelete();
         }}

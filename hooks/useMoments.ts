@@ -13,10 +13,13 @@ const MOMENTS_STORAGE_KEY = 'captured_moments';
 
 // ANCIEN HOOK - UTILISE MAINTENANT useMomentsContext() PARTOUT
 export const useMoments = (videoId: string | null) => {
-  console.warn('useMoments is deprecated. Use useMomentsContext() instead.');
 
   // Wrapper autour du nouveau contexte pour compatibilité
-  const { getMomentsForVideo, captureMoment: contextCapture, deleteMomentFromVideo } = useMomentsContext();
+  const {
+    getMomentsForVideo,
+    captureMoment: contextCapture,
+    deleteMomentFromVideo,
+  } = useMomentsContext();
 
   const moments = videoId ? getMomentsForVideo(videoId) : [];
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +34,6 @@ export const useMoments = (videoId: string | null) => {
 
   const loadMoments = async () => {
     // Désormais géré par le contexte
-    console.warn('loadMoments is deprecated');
   };
 
   // ANCIEN CODE DÉSACTIVÉ
@@ -51,7 +53,6 @@ export const useMoments = (videoId: string | null) => {
       // Sauvegarder
       await AsyncStorage.setItem(MOMENTS_STORAGE_KEY, JSON.stringify(allMoments));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des moments:', error);
     }
   };
   */
@@ -59,7 +60,6 @@ export const useMoments = (videoId: string | null) => {
   // WRAPPER pour compatibilité - délègue au contexte
   const captureMoment = async (timestamp: number, duration?: number) => {
     if (!videoId) return;
-    console.warn('Using deprecated captureMoment. Use context method instead.');
 
     // Délègue au contexte unifié
     return await contextCapture(videoId, timestamp, duration);
@@ -68,7 +68,6 @@ export const useMoments = (videoId: string | null) => {
   // WRAPPER pour compatibilité - délègue au contexte
   const deleteMoment = async (momentId: string) => {
     if (!videoId) return;
-    console.warn('Using deprecated deleteMoment. Use context method instead.');
 
     // Délègue au contexte unifié
     await deleteMomentFromVideo(videoId, momentId);
@@ -76,7 +75,6 @@ export const useMoments = (videoId: string | null) => {
 
   // WRAPPER pour compatibilité
   const clearMoments = async () => {
-    console.warn('clearMoments is deprecated and no longer needed.');
     // Ne fait plus rien - les moments sont gérés par le contexte
   };
 

@@ -36,29 +36,30 @@ export function PlaylistModal({ visible, onClose, videoData, isDark = false }: P
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddToPlaylist = useCallback(async (playlist: Playlist) => {
-    setIsLoading(true);
-    try {
-      await addVideoToPlaylist(playlist.id, {
-        videoId: videoData.videoId,
-        title: videoData.title,
-        author: videoData.author,
-        thumbnail: videoData.thumbnail,
-        url: videoData.url,
-      });
+  const handleAddToPlaylist = useCallback(
+    async (playlist: Playlist) => {
+      setIsLoading(true);
+      try {
+        await addVideoToPlaylist(playlist.id, {
+          videoId: videoData.videoId,
+          title: videoData.title,
+          author: videoData.author,
+          thumbnail: videoData.thumbnail,
+          url: videoData.url,
+        });
 
-      Alert.alert(
-        'Succès',
-        `Vidéo ajoutée à "${playlist.name}"`,
-        [{ text: 'OK', onPress: onClose }]
-      );
-    } catch (error) {
-      console.error('Error adding video to playlist:', error);
-      Alert.alert('Erreur', 'Impossible d\'ajouter la vidéo à la playlist');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [videoData, addVideoToPlaylist, onClose]);
+        Alert.alert('Succès', `Vidéo ajoutée à "${playlist.name}"`, [
+          { text: 'OK', onPress: onClose },
+        ]);
+      } catch (error) {
+        console.error('Error adding video to playlist:', error);
+        Alert.alert('Erreur', "Impossible d'ajouter la vidéo à la playlist");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [videoData, addVideoToPlaylist, onClose]
+  );
 
   const handleCreatePlaylist = useCallback(async () => {
     if (!newPlaylistName.trim()) {
@@ -80,11 +81,9 @@ export function PlaylistModal({ visible, onClose, videoData, isDark = false }: P
       setNewPlaylistName('');
       setIsCreating(false);
 
-      Alert.alert(
-        'Succès',
-        `Playlist "${newPlaylist.name}" créée et vidéo ajoutée`,
-        [{ text: 'OK', onPress: onClose }]
-      );
+      Alert.alert('Succès', `Playlist "${newPlaylist.name}" créée et vidéo ajoutée`, [
+        { text: 'OK', onPress: onClose },
+      ]);
     } catch (error) {
       console.error('Error creating playlist:', error);
       Alert.alert('Erreur', 'Impossible de créer la playlist');
@@ -100,28 +99,17 @@ export function PlaylistModal({ visible, onClose, videoData, isDark = false }: P
       disabled={isLoading}
     >
       <View style={styles.playlistInfo}>
-        <Text style={[styles.playlistName, { color: colors.text.primary }]}>
-          {item.name}
-        </Text>
+        <Text style={[styles.playlistName, { color: colors.text.primary }]}>{item.name}</Text>
         <Text style={[styles.playlistCount, { color: colors.text.secondary }]}>
           {item.videos.length} vidéo{item.videos.length !== 1 ? 's' : ''}
         </Text>
       </View>
-      <Ionicons
-        name="add-circle"
-        size={24}
-        color={colors.accent}
-      />
+      <Ionicons name="add-circle" size={24} color={colors.accent} />
     </TouchableOpacity>
   );
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -149,13 +137,18 @@ export function PlaylistModal({ visible, onClose, videoData, isDark = false }: P
 
             {/* Create new playlist section */}
             {isCreating ? (
-              <View style={[styles.createSection, { backgroundColor: colors.background.secondary }]}>
+              <View
+                style={[styles.createSection, { backgroundColor: colors.background.secondary }]}
+              >
                 <TextInput
-                  style={[styles.input, {
-                    backgroundColor: colors.background.primary,
-                    borderColor: colors.border.light,
-                    color: colors.text.primary,
-                  }]}
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.background.primary,
+                      borderColor: colors.border.light,
+                      color: colors.text.primary,
+                    },
+                  ]}
                   placeholder="Nom de la playlist"
                   placeholderTextColor={colors.text.tertiary}
                   value={newPlaylistName}
@@ -212,11 +205,7 @@ export function PlaylistModal({ visible, onClose, videoData, isDark = false }: P
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
-                  <Ionicons
-                    name="musical-notes"
-                    size={48}
-                    color={colors.text.tertiary}
-                  />
+                  <Ionicons name="musical-notes" size={48} color={colors.text.tertiary} />
                   <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>
                     Aucune playlist pour le moment
                   </Text>

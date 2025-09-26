@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PlaylistVideo {
@@ -40,8 +47,14 @@ interface PlaylistContextType {
   // Playlist management
   createPlaylist: (name: string, description?: string) => Promise<Playlist>;
   deletePlaylist: (playlistId: string) => Promise<void>;
-  updatePlaylist: (playlistId: string, updates: Partial<Omit<Playlist, 'id' | 'createdAt'>>) => Promise<void>;
-  addVideoToPlaylist: (playlistId: string, video: Omit<PlaylistVideo, 'id' | 'addedAt'>) => Promise<void>;
+  updatePlaylist: (
+    playlistId: string,
+    updates: Partial<Omit<Playlist, 'id' | 'createdAt'>>
+  ) => Promise<void>;
+  addVideoToPlaylist: (
+    playlistId: string,
+    video: Omit<PlaylistVideo, 'id' | 'addedAt'>
+  ) => Promise<void>;
   removeVideoFromPlaylist: (playlistId: string, videoId: string) => Promise<void>;
   reorderPlaylistVideos: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
 
@@ -118,7 +131,9 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         const parsedState = JSON.parse(stateData);
         // Find the current playlist in loaded playlists
         if (parsedState.currentPlaylist) {
-          const playlist = parsedPlaylists?.find((p: Playlist) => p.id === parsedState.currentPlaylist.id);
+          const playlist = parsedPlaylists?.find(
+            (p: Playlist) => p.id === parsedState.currentPlaylist.id
+          );
           if (playlist) {
             parsedState.currentPlaylist = playlist;
           } else {
@@ -153,19 +168,22 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
 
   const generateId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const createPlaylist = useCallback(async (name: string, description?: string): Promise<Playlist> => {
-    const playlist: Playlist = {
-      id: generateId(),
-      name,
-      description,
-      videos: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+  const createPlaylist = useCallback(
+    async (name: string, description?: string): Promise<Playlist> => {
+      const playlist: Playlist = {
+        id: generateId(),
+        name,
+        description,
+        videos: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
 
-    setPlaylists(prev => [...prev, playlist]);
-    return playlist;
-  }, []);
+      setPlaylists(prev => [...prev, playlist]);
+      return playlist;
+    },
+    []
+  );
 
   const deletePlaylist = useCallback(async (playlistId: string): Promise<void> => {
     setPlaylists(prev => prev.filter(p => p.id !== playlistId));
@@ -183,105 +201,116 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const updatePlaylist = useCallback(async (
-    playlistId: string,
-    updates: Partial<Omit<Playlist, 'id' | 'createdAt'>>
-  ): Promise<void> => {
-    setPlaylists(prev => prev.map(playlist =>
-      playlist.id === playlistId
-        ? { ...playlist, ...updates, updatedAt: Date.now() }
-        : playlist
-    ));
-  }, []);
+  const updatePlaylist = useCallback(
+    async (
+      playlistId: string,
+      updates: Partial<Omit<Playlist, 'id' | 'createdAt'>>
+    ): Promise<void> => {
+      setPlaylists(prev =>
+        prev.map(playlist =>
+          playlist.id === playlistId ? { ...playlist, ...updates, updatedAt: Date.now() } : playlist
+        )
+      );
+    },
+    []
+  );
 
-  const addVideoToPlaylist = useCallback(async (
-    playlistId: string,
-    video: Omit<PlaylistVideo, 'id' | 'addedAt'>
-  ): Promise<void> => {
-    const newVideo: PlaylistVideo = {
-      ...video,
-      id: generateId(),
-      addedAt: Date.now(),
-    };
+  const addVideoToPlaylist = useCallback(
+    async (playlistId: string, video: Omit<PlaylistVideo, 'id' | 'addedAt'>): Promise<void> => {
+      const newVideo: PlaylistVideo = {
+        ...video,
+        id: generateId(),
+        addedAt: Date.now(),
+      };
 
-    setPlaylists(prev => prev.map(playlist =>
-      playlist.id === playlistId
-        ? {
-            ...playlist,
-            videos: [...playlist.videos, newVideo],
-            updatedAt: Date.now(),
-          }
-        : playlist
-    ));
-  }, []);
+      setPlaylists(prev =>
+        prev.map(playlist =>
+          playlist.id === playlistId
+            ? {
+                ...playlist,
+                videos: [...playlist.videos, newVideo],
+                updatedAt: Date.now(),
+              }
+            : playlist
+        )
+      );
+    },
+    []
+  );
 
-  const removeVideoFromPlaylist = useCallback(async (
-    playlistId: string,
-    videoId: string
-  ): Promise<void> => {
-    setPlaylists(prev => prev.map(playlist =>
-      playlist.id === playlistId
-        ? {
-            ...playlist,
-            videos: playlist.videos.filter(v => v.videoId !== videoId),
-            updatedAt: Date.now(),
-          }
-        : playlist
-    ));
+  const removeVideoFromPlaylist = useCallback(
+    async (playlistId: string, videoId: string): Promise<void> => {
+      setPlaylists(prev =>
+        prev.map(playlist =>
+          playlist.id === playlistId
+            ? {
+                ...playlist,
+                videos: playlist.videos.filter(v => v.videoId !== videoId),
+                updatedAt: Date.now(),
+              }
+            : playlist
+        )
+      );
 
-    // Adjust current video index if needed
-    setCurrentState(prev => {
-      if (prev.currentPlaylist?.id === playlistId) {
-        const playlist = playlists.find(p => p.id === playlistId);
-        if (playlist) {
-          const videoIndex = playlist.videos.findIndex(v => v.videoId === videoId);
-          if (videoIndex !== -1 && videoIndex <= prev.currentVideoIndex) {
-            return {
-              ...prev,
-              currentVideoIndex: Math.max(0, prev.currentVideoIndex - 1),
-            };
+      // Adjust current video index if needed
+      setCurrentState(prev => {
+        if (prev.currentPlaylist?.id === playlistId) {
+          const playlist = playlists.find(p => p.id === playlistId);
+          if (playlist) {
+            const videoIndex = playlist.videos.findIndex(v => v.videoId === videoId);
+            if (videoIndex !== -1 && videoIndex <= prev.currentVideoIndex) {
+              return {
+                ...prev,
+                currentVideoIndex: Math.max(0, prev.currentVideoIndex - 1),
+              };
+            }
           }
         }
+        return prev;
+      });
+    },
+    [playlists]
+  );
+
+  const reorderPlaylistVideos = useCallback(
+    async (playlistId: string, fromIndex: number, toIndex: number): Promise<void> => {
+      setPlaylists(prev =>
+        prev.map(playlist => {
+          if (playlist.id === playlistId) {
+            const videos = [...playlist.videos];
+            const [movedVideo] = videos.splice(fromIndex, 1);
+            videos.splice(toIndex, 0, movedVideo);
+            return { ...playlist, videos, updatedAt: Date.now() };
+          }
+          return playlist;
+        })
+      );
+    },
+    []
+  );
+
+  const setActivePlaylist = useCallback(
+    (playlistId: string | null) => {
+      if (!playlistId) {
+        setCurrentState(prev => ({
+          ...prev,
+          currentPlaylist: null,
+          currentVideoIndex: 0,
+        }));
+        return;
       }
-      return prev;
-    });
-  }, [playlists]);
 
-  const reorderPlaylistVideos = useCallback(async (
-    playlistId: string,
-    fromIndex: number,
-    toIndex: number
-  ): Promise<void> => {
-    setPlaylists(prev => prev.map(playlist => {
-      if (playlist.id === playlistId) {
-        const videos = [...playlist.videos];
-        const [movedVideo] = videos.splice(fromIndex, 1);
-        videos.splice(toIndex, 0, movedVideo);
-        return { ...playlist, videos, updatedAt: Date.now() };
+      const playlist = playlists.find(p => p.id === playlistId);
+      if (playlist) {
+        setCurrentState(prev => ({
+          ...prev,
+          currentPlaylist: playlist,
+          currentVideoIndex: 0,
+        }));
       }
-      return playlist;
-    }));
-  }, []);
-
-  const setActivePlaylist = useCallback((playlistId: string | null) => {
-    if (!playlistId) {
-      setCurrentState(prev => ({
-        ...prev,
-        currentPlaylist: null,
-        currentVideoIndex: 0,
-      }));
-      return;
-    }
-
-    const playlist = playlists.find(p => p.id === playlistId);
-    if (playlist) {
-      setCurrentState(prev => ({
-        ...prev,
-        currentPlaylist: playlist,
-        currentVideoIndex: 0,
-      }));
-    }
-  }, [playlists]);
+    },
+    [playlists]
+  );
 
   const playVideoAtIndex = useCallback((index: number) => {
     setCurrentState(prev => {
@@ -300,7 +329,9 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
 
     if (currentState.shuffle) {
       // Simple shuffle: random video excluding current
-      const availableIndices = videos.map((_, i) => i).filter(i => i !== currentState.currentVideoIndex);
+      const availableIndices = videos
+        .map((_, i) => i)
+        .filter(i => i !== currentState.currentVideoIndex);
       if (availableIndices.length > 0) {
         nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
       } else {
@@ -444,11 +475,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     getPlaylistProgress,
   };
 
-  return (
-    <PlaylistContext.Provider value={value}>
-      {children}
-    </PlaylistContext.Provider>
-  );
+  return <PlaylistContext.Provider value={value}>{children}</PlaylistContext.Provider>;
 }
 
 export function usePlaylist() {

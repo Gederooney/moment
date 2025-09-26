@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Switch,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 
@@ -66,10 +59,7 @@ export const SettingItem: React.FC<SettingItemProps> = ({
         return (
           <View style={styles.valueContainer}>
             {value !== undefined && (
-              <Text style={[
-                styles.valueText,
-                destructive && styles.valueTextDestructive,
-              ]}>
+              <Text style={[styles.valueText, destructive && styles.valueTextDestructive]}>
                 {value}
               </Text>
             )}
@@ -86,29 +76,19 @@ export const SettingItem: React.FC<SettingItemProps> = ({
 
       default:
         return showChevron ? (
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color={Colors.text.light}
-          />
+          <Ionicons name="chevron-forward" size={16} color={Colors.text.light} />
         ) : null;
     }
   };
 
   return (
     <TouchableOpacity
-      style={[
-        styles.container,
-        disabled && styles.containerDisabled,
-      ]}
+      style={[styles.container, disabled && styles.containerDisabled]}
       onPress={handlePress}
       disabled={disabled || type === 'info'}
       activeOpacity={0.7}
     >
-      <View style={[
-        styles.iconContainer,
-        destructive && styles.iconContainerDestructive,
-      ]}>
+      <View style={[styles.iconContainer, destructive && styles.iconContainerDestructive]}>
         <Ionicons
           name={icon}
           size={20}
@@ -117,20 +97,17 @@ export const SettingItem: React.FC<SettingItemProps> = ({
       </View>
 
       <View style={styles.content}>
-        <Text style={[
-          styles.title,
-          destructive && styles.titleDestructive,
-          disabled && styles.titleDisabled,
-        ]}>
+        <Text
+          style={[
+            styles.title,
+            destructive && styles.titleDestructive,
+            disabled && styles.titleDisabled,
+          ]}
+        >
           {title}
         </Text>
         {subtitle && (
-          <Text style={[
-            styles.subtitle,
-            disabled && styles.subtitleDisabled,
-          ]}>
-            {subtitle}
-          </Text>
+          <Text style={[styles.subtitle, disabled && styles.subtitleDisabled]}>{subtitle}</Text>
         )}
       </View>
 

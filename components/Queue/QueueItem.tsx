@@ -4,15 +4,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  Animated,
-  ViewStyle,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Animated, ViewStyle } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../../constants/Colors';
@@ -101,18 +93,12 @@ export const QueueItem: React.FC<QueueItemProps> = ({
       >
         {/* Thumbnail */}
         <View style={styles.thumbnailContainer}>
-          <Image
-            source={{ uri: item.thumbnail }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
+          <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} resizeMode="cover" />
 
           {/* Duration overlay */}
           {item.duration && (
             <View style={styles.durationOverlay}>
-              <Text style={styles.durationText}>
-                {item.duration}
-              </Text>
+              <Text style={styles.durationText}>{item.duration}</Text>
             </View>
           )}
 
@@ -130,10 +116,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
         <View style={styles.contentContainer}>
           {/* Title */}
           <Text
-            style={[
-              styles.title,
-              { color: isCurrentVideo ? colors.primary : colors.text.primary }
-            ]}
+            style={[styles.title, { color: isCurrentVideo ? colors.primary : colors.text.primary }]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -160,11 +143,7 @@ export const QueueItem: React.FC<QueueItemProps> = ({
     return content;
   }
 
-  return (
-    <Swipeable renderRightActions={renderRightActions}>
-      {content}
-    </Swipeable>
-  );
+  return <Swipeable renderRightActions={renderRightActions}>{content}</Swipeable>;
 };
 
 const styles = StyleSheet.create({

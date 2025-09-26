@@ -11,30 +11,30 @@ const BASE_UNIT = 8;
 export const Spacing = {
   // Micro spacing (for fine adjustments)
   xs2: BASE_UNIT * 0.25, // 2px
-  xs: BASE_UNIT * 0.5,   // 4px
+  xs: BASE_UNIT * 0.5, // 4px
 
   // Small spacing
-  sm: BASE_UNIT,         // 8px
-  sm2: BASE_UNIT * 1.5,  // 12px
+  sm: BASE_UNIT, // 8px
+  sm2: BASE_UNIT * 1.5, // 12px
 
   // Medium spacing (default)
-  md: BASE_UNIT * 2,     // 16px
-  md2: BASE_UNIT * 2.5,  // 20px
-  md3: BASE_UNIT * 3,    // 24px
+  md: BASE_UNIT * 2, // 16px
+  md2: BASE_UNIT * 2.5, // 20px
+  md3: BASE_UNIT * 3, // 24px
 
   // Large spacing
-  lg: BASE_UNIT * 4,     // 32px
-  lg2: BASE_UNIT * 5,    // 40px
-  lg3: BASE_UNIT * 6,    // 48px
+  lg: BASE_UNIT * 4, // 32px
+  lg2: BASE_UNIT * 5, // 40px
+  lg3: BASE_UNIT * 6, // 48px
 
   // Extra large spacing
-  xl: BASE_UNIT * 8,     // 64px
-  xl2: BASE_UNIT * 10,   // 80px
-  xl3: BASE_UNIT * 12,   // 96px
+  xl: BASE_UNIT * 8, // 64px
+  xl2: BASE_UNIT * 10, // 80px
+  xl3: BASE_UNIT * 12, // 96px
 
   // XXL spacing (for major sections)
-  xxl: BASE_UNIT * 16,   // 128px
-  xxl2: BASE_UNIT * 20,  // 160px
+  xxl: BASE_UNIT * 16, // 128px
+  xxl2: BASE_UNIT * 20, // 160px
 };
 
 // Container spacing (screen-level margins and paddings)
@@ -43,17 +43,17 @@ export const Container = {
   paddingHorizontal: Spacing.md2, // 20px
 
   // Vertical padding for main content
-  paddingVertical: Spacing.md,    // 16px
+  paddingVertical: Spacing.md, // 16px
 
   // Section spacing
-  sectionGap: Spacing.lg,         // 32px
+  sectionGap: Spacing.lg, // 32px
 
   // Card spacing
-  cardPadding: Spacing.md,        // 16px
-  cardGap: Spacing.md,            // 16px
+  cardPadding: Spacing.md, // 16px
+  cardGap: Spacing.md, // 16px
 
   // Screen edges
-  screenPadding: Spacing.md2,     // 20px
+  screenPadding: Spacing.md2, // 20px
 };
 
 // Component-specific spacing
@@ -67,54 +67,54 @@ export const Component = {
 
   // Buttons
   button: {
-    paddingVertical: Spacing.md,    // 16px
+    paddingVertical: Spacing.md, // 16px
     paddingHorizontal: Spacing.md3, // 24px
-    borderRadius: Spacing.md,       // 16px
-    gap: Spacing.sm,                // 8px
+    borderRadius: Spacing.md, // 16px
+    gap: Spacing.sm, // 8px
   },
 
   // Large buttons (for driving mode)
   buttonLarge: {
-    paddingVertical: Spacing.md3,   // 24px
-    paddingHorizontal: Spacing.lg,  // 32px
-    borderRadius: Spacing.md2,      // 20px
-    gap: Spacing.sm2,               // 12px
-    minHeight: 80,                  // Large touch target
+    paddingVertical: Spacing.md3, // 24px
+    paddingHorizontal: Spacing.lg, // 32px
+    borderRadius: Spacing.md2, // 20px
+    gap: Spacing.sm2, // 12px
+    minHeight: 80, // Large touch target
   },
 
   // Input fields
   input: {
-    paddingVertical: Spacing.md,    // 16px
-    paddingHorizontal: Spacing.md,  // 16px
-    borderRadius: Spacing.sm2,      // 12px
-    minHeight: 48,                  // Comfortable touch target
+    paddingVertical: Spacing.md, // 16px
+    paddingHorizontal: Spacing.md, // 16px
+    borderRadius: Spacing.sm2, // 12px
+    minHeight: 48, // Comfortable touch target
   },
 
   // Cards
   card: {
-    padding: Spacing.md,            // 16px
-    borderRadius: Spacing.md,       // 16px
-    gap: Spacing.sm2,               // 12px
+    padding: Spacing.md, // 16px
+    borderRadius: Spacing.md, // 16px
+    gap: Spacing.sm2, // 12px
   },
 
   // List items
   listItem: {
-    paddingVertical: Spacing.sm2,   // 12px
-    paddingHorizontal: Spacing.md,  // 16px
-    gap: Spacing.sm,                // 8px
-    minHeight: 56,                  // Material Design recommendation
+    paddingVertical: Spacing.sm2, // 12px
+    paddingHorizontal: Spacing.md, // 16px
+    gap: Spacing.sm, // 8px
+    minHeight: 56, // Material Design recommendation
   },
 
   // Navigation
   nav: {
-    padding: Spacing.sm,            // 8px
-    gap: Spacing.xs,                // 4px
+    padding: Spacing.sm, // 8px
+    gap: Spacing.xs, // 4px
   },
 
   // Modal/Bottom sheet
   modal: {
-    padding: Spacing.md3,           // 24px
-    borderRadius: Spacing.md2,      // 20px
+    padding: Spacing.md3, // 24px
+    borderRadius: Spacing.md2, // 20px
   },
 };
 
@@ -124,27 +124,27 @@ export const Layout = {
   header: {
     height: 64,
     paddingHorizontal: Spacing.md2, // 20px
-    paddingVertical: Spacing.sm,    // 8px
+    paddingVertical: Spacing.sm, // 8px
   },
 
   // Tab bar spacing
   tabBar: {
     height: 80, // Larger for easier driving use
-    paddingBottom: Spacing.sm,      // 8px (for safe area)
-    paddingTop: Spacing.sm,         // 8px
+    paddingBottom: Spacing.sm, // 8px (for safe area)
+    paddingTop: Spacing.sm, // 8px
   },
 
   // Content spacing
   content: {
-    paddingTop: Spacing.md,         // 16px
-    paddingBottom: Spacing.lg,      // 32px
-    gap: Spacing.md,                // 16px between sections
+    paddingTop: Spacing.md, // 16px
+    paddingBottom: Spacing.lg, // 32px
+    gap: Spacing.md, // 16px between sections
   },
 
   // Floating elements
   floating: {
-    margin: Spacing.md,             // 16px from edges
-    bottom: Spacing.xl,             // 64px from bottom (above tab bar)
+    margin: Spacing.md, // 16px from edges
+    bottom: Spacing.xl, // 64px from bottom (above tab bar)
   },
 };
 
@@ -159,17 +159,17 @@ export const DrivingSpacing = {
 
   // Primary action buttons
   primaryButton: {
-    paddingVertical: Spacing.lg,    // 32px
+    paddingVertical: Spacing.lg, // 32px
     paddingHorizontal: Spacing.lg2, // 40px
-    borderRadius: Spacing.md3,      // 24px
-    minHeight: 96,                  // Very large touch target
+    borderRadius: Spacing.md3, // 24px
+    minHeight: 96, // Very large touch target
   },
 
   // Reduced density for easier interaction
   listItem: {
-    paddingVertical: Spacing.md3,   // 24px
+    paddingVertical: Spacing.md3, // 24px
     paddingHorizontal: Spacing.md3, // 24px
-    minHeight: 72,                  // Larger than normal
+    minHeight: 72, // Larger than normal
   },
 };
 

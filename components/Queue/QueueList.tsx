@@ -4,13 +4,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { QueueItem, QueueVideoItem } from './QueueItem';
@@ -51,11 +45,7 @@ export const QueueList: React.FC<QueueListProps> = ({
   );
 
   if (videos.length === 0) {
-    return (
-      <View style={[styles.container, style]}>
-        {renderEmptyState()}
-      </View>
-    );
+    return <View style={[styles.container, style]}>{renderEmptyState()}</View>;
   }
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<QueueVideoItem>) => {
@@ -84,17 +74,10 @@ export const QueueList: React.FC<QueueListProps> = ({
           <TouchableOpacity
             onPressIn={drag}
             disabled={isActive}
-            style={[
-              styles.dragHandle,
-              { backgroundColor: colors.background.secondary }
-            ]}
+            style={[styles.dragHandle, { backgroundColor: colors.background.secondary }]}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons
-              name="reorder-three-outline"
-              size={20}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="reorder-three-outline" size={20} color={colors.text.secondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -108,14 +91,12 @@ export const QueueList: React.FC<QueueListProps> = ({
         renderItem={renderItem}
         keyExtractor={item => item.id}
         onDragEnd={({ data }) => onVideoReorder?.(data)}
-        scrollEnabled={true}
+        scrollEnabled={false}
         showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={true}
-        activationDistance={5} // Distance pour activer le drag
-        dragHitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Zone de hit pour le drag
-        dragItemOverflow={true} // Permet aux éléments de sortir des limites pendant le drag
-        autoscrollThreshold={100} // Seuil pour l'auto-scroll
-        autoscrollSpeed={100} // Vitesse d'auto-scroll
+        nestedScrollEnabled={false}
+        activationDistance={5}
+        dragHitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        dragItemOverflow={true}
       />
     </View>
   );
@@ -124,7 +105,6 @@ export const QueueList: React.FC<QueueListProps> = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    maxHeight: 300, // Limite la hauteur pour permettre le scroll
   },
   itemContainer: {
     width: '100%',
@@ -169,11 +149,11 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
-    minHeight: 100,
+    minHeight: 40,
+    paddingVertical: 8,
   },
   emptyTitle: {
     ...Typography.body,

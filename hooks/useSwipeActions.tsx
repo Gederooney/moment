@@ -50,11 +50,9 @@ export const useSwipeActions = ({
 
   const handleArchive = useCallback(() => {
     if (!onArchive) {
-      Alert.alert(
-        'Archiver',
-        'Cette fonctionnalité sera disponible bientôt !',
-        [{ text: 'OK', onPress: closeSwipe }]
-      );
+      Alert.alert('Archiver', 'Cette fonctionnalité sera disponible bientôt !', [
+        { text: 'OK', onPress: closeSwipe },
+      ]);
       return;
     }
 

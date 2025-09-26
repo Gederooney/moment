@@ -30,7 +30,6 @@ export const testStorageRefactoring = async () => {
     }
 
     console.log('🎉 Refactoring test completed!');
-
   } catch (error) {
     console.error('❌ Refactoring test failed:', error);
   }
@@ -45,7 +44,7 @@ export const getValidationChecklist = () => {
     '✅ app/(tabs)/index.tsx refactorisé pour utiliser UNIQUEMENT le contexte',
     '✅ useMoments.ts désactivé et transformé en wrapper de compatibilité',
     '✅ Migration script créé pour les données existantes',
-    '✅ Plus d\'erreurs TypeScript',
+    "✅ Plus d'erreurs TypeScript",
     '⏳ À tester: Capture de moment depuis le lecteur',
     '⏳ À tester: Affichage des moments dans la page Moments',
     '⏳ À tester: Suppression des moments',

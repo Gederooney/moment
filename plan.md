@@ -97,6 +97,7 @@
 10. **Stockage local** persistant
 
 ### Architecture technique:
+
 - **React Native avec Expo**
 - **TypeScript** pour la sécurité des types
 - **Expo Router** pour la navigation

@@ -12,8 +12,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, getColors } from '../../constants/Colors';
 import { useTopBarContext } from '../../contexts/TopBarContext';
-import { extractVideoId, isValidYouTubeUrl, getVideoTitle } from '../../utils/youtube';
+import { extractVideoId, isValidYouTubeUrl } from '../../utils/youtube';
 import { fetchYouTubeMetadataWithFallback } from '../../services/youtubeMetadata';
+import AntDesign from '@expo/vector-icons/AntDesign';
 
 // Hook personnalisé pour le debounce
 function useDebounce<T>(value: T, delay: number): T {
@@ -55,36 +56,38 @@ export default function HomeScreen() {
     setTitle('Moments');
   }, [setTitle]);
 
-  const handleNavigateToPlayer = useCallback(async (url: string) => {
-    setIsLoadingVideo(true);
-    setError('');
+  const handleNavigateToPlayer = useCallback(
+    async (url: string) => {
+      setIsLoadingVideo(true);
+      setError('');
 
-    try {
-      const extractedVideoId = extractVideoId(url);
-      if (extractedVideoId) {
-        // Récupérer les métadonnées YouTube
-        const metadata = await fetchYouTubeMetadataWithFallback(url, extractedVideoId);
+      try {
+        const extractedVideoId = extractVideoId(url);
+        if (extractedVideoId) {
+          // Récupérer les métadonnées YouTube
+          const metadata = await fetchYouTubeMetadataWithFallback(url, extractedVideoId);
 
-        // Navigate to player page with enriched metadata
-        router.push({
-          pathname: '/player',
-          params: {
-            videoId: extractedVideoId,
-            title: metadata.title,
-            author: metadata.author_name,
-            thumbnail: metadata.thumbnail_url,
-            url: url,
-            isFromApi: metadata.isFromApi.toString(),
-          },
-        });
+          // Navigate to player page with enriched metadata
+          router.push({
+            pathname: '/player',
+            params: {
+              videoId: extractedVideoId,
+              title: metadata.title,
+              author: metadata.author_name,
+              thumbnail: metadata.thumbnail_url,
+              url: url,
+              isFromApi: metadata.isFromApi.toString(),
+            },
+          });
+        }
+      } catch (error) {
+        setError('Impossible de charger la vidéo');
+      } finally {
+        setIsLoadingVideo(false);
       }
-    } catch (error) {
-      console.error('Error loading video:', error);
-      setError('Impossible de charger la vidéo');
-    } finally {
-      setIsLoadingVideo(false);
-    }
-  }, [router]);
+    },
+    [router]
+  );
 
   // Navigation automatique quand l'URL est valide (avec debounce)
   useEffect(() => {
@@ -123,8 +126,8 @@ export default function HomeScreen() {
                       borderColor: isValidYouTubeUrl(youtubeUrl)
                         ? Colors.primary
                         : error
-                        ? Colors.error
-                        : colors.border.medium,
+                          ? Colors.error
+                          : colors.border.medium,
                       color: colors.text.primary,
                     },
                     isValidYouTubeUrl(youtubeUrl) && styles.inputValid,
@@ -132,7 +135,7 @@ export default function HomeScreen() {
                   placeholder="Coller l'URL YouTube"
                   placeholderTextColor={colors.text.tertiary}
                   value={youtubeUrl}
-                  onChangeText={(text) => {
+                  onChangeText={text => {
                     setYoutubeUrl(text);
                     if (error) setError('');
                   }}
@@ -151,9 +154,7 @@ export default function HomeScreen() {
                 )}
               </View>
 
-              {error && (
-                <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text>
-              )}
+              {error && <Text style={[styles.errorText, { color: Colors.error }]}>{error}</Text>}
 
               {/* Section Sources supportées */}
               <View style={styles.supportedSourcesContainer}>
@@ -162,13 +163,13 @@ export default function HomeScreen() {
                 </Text>
                 <View style={styles.sourcesIconsContainer}>
                   <View style={styles.sourceIcon}>
-                    <Ionicons name="logo-youtube" size={36} color="#FF0000" />
-                  </View>
-                  <View style={[styles.sourceIcon, { backgroundColor: '#1DB954' }]}>
-                    <Text style={{ color: 'white', fontSize: 24, fontWeight: 'bold' }}>S</Text>
+                    <AntDesign name="youtube" size={20} color="#FF0000" />
                   </View>
                   <View style={styles.sourceIcon}>
-                    <Ionicons name="logo-apple" size={36} color={colors.text.primary} />
+                    <AntDesign name="spotify" size={20} color="#1DB954" />
+                  </View>
+                  <View style={styles.sourceIcon}>
+                    <AntDesign name="apple" size={20} color={colors.text.primary} />
                   </View>
                 </View>
               </View>
@@ -283,15 +284,15 @@ const styles = StyleSheet.create({
   sourcesIconsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 24,
+    gap: 12,
   },
   sourceIcon: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.025)',
   },
 
   // État Chargement

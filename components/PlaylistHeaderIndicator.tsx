@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, getColors } from '../constants/Colors';
 import { usePlaylist } from '../contexts/PlaylistContext';
@@ -14,10 +9,7 @@ interface PlaylistHeaderIndicatorProps {
   onPress?: () => void;
 }
 
-export function PlaylistHeaderIndicator({
-  isDark = false,
-  onPress
-}: PlaylistHeaderIndicatorProps) {
+export function PlaylistHeaderIndicator({ isDark = false, onPress }: PlaylistHeaderIndicatorProps) {
   const colors = getColors(isDark);
   const { currentState, getPlaylistProgress } = usePlaylist();
 
@@ -35,11 +27,7 @@ export function PlaylistHeaderIndicator({
     >
       <View style={styles.content}>
         {/* Playlist icon */}
-        <Ionicons
-          name="list"
-          size={16}
-          color={colors.accent}
-        />
+        <Ionicons name="list" size={16} color={colors.accent} />
 
         {/* Progress info */}
         {progress && (
@@ -50,26 +38,12 @@ export function PlaylistHeaderIndicator({
 
         {/* Mode indicators */}
         <View style={styles.indicators}>
-          {currentState.autoPlay && (
-            <Ionicons
-              name="play-circle"
-              size={12}
-              color={colors.accent}
-            />
-          )}
+          {currentState.autoPlay && <Ionicons name="play-circle" size={12} color={colors.accent} />}
           {currentState.shuffle && (
-            <Ionicons
-              name="shuffle"
-              size={12}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="shuffle" size={12} color={colors.text.secondary} />
           )}
           {currentState.repeat && (
-            <Ionicons
-              name="repeat"
-              size={12}
-              color={colors.text.secondary}
-            />
+            <Ionicons name="repeat" size={12} color={colors.text.secondary} />
           )}
         </View>
       </View>

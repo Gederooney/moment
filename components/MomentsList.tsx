@@ -1,14 +1,10 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CapturedMoment } from '../types/moment';
 import { Colors } from '../constants/Colors';
 import { SwipeableItem } from './SwipeableItem';
+import { formatDuration } from '../utils/time';
 
 interface MomentsListProps {
   moments: CapturedMoment[];
@@ -25,10 +21,6 @@ export const MomentsList: React.FC<MomentsListProps> = ({
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const formatDuration = (seconds: number) => {
-    return `${seconds}s`;
   };
 
   const renderMoment = ({ item, index }: { item: CapturedMoment; index: number }) => {
@@ -51,24 +43,14 @@ export const MomentsList: React.FC<MomentsListProps> = ({
           <View style={styles.momentContent}>
             <View style={styles.momentInfo}>
               <View style={styles.momentHeader}>
-                <Text style={styles.momentTitle}>
-                  Moment {index + 1}
-                </Text>
-                <Text style={styles.momentDuration}>
-                  {formatDuration(item.duration)}
-                </Text>
+                <Text style={styles.momentTitle}>Moment {index + 1}</Text>
+                <Text style={styles.momentDuration}>{formatDuration(item.duration)}</Text>
               </View>
-              <Text style={styles.momentTimestamp}>
-                Débute à {formatTime(item.timestamp)}
-              </Text>
+              <Text style={styles.momentTimestamp}>Débute à {formatTime(item.timestamp)}</Text>
             </View>
             <View style={styles.momentActions}>
               <View style={styles.playIcon}>
                 <Ionicons name="play" size={20} color={Colors.primary} />
-              </View>
-              {/* Swipe hint indicator */}
-              <View style={styles.swipeHint}>
-                <Ionicons name="swap-horizontal" size={14} color={Colors.text.tertiary} />
               </View>
             </View>
           </View>
@@ -82,23 +64,17 @@ export const MomentsList: React.FC<MomentsListProps> = ({
       <View style={styles.emptyContainer}>
         <Ionicons name="radio-button-off" size={48} color={Colors.text.light} />
         <Text style={styles.emptyText}>Aucun moment capturé</Text>
-        <Text style={styles.emptySubtext}>
-          Appuyez sur "Capturer ce moment" pendant la lecture
-        </Text>
+        <Text style={styles.emptySubtext}>Appuyez sur "Capturer ce moment" pendant la lecture</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>
-        Moments
-      </Text>
+      <Text style={styles.header}>Moments</Text>
       <View style={styles.list}>
         {moments.map((item, index) => (
-          <View key={item.id}>
-            {renderMoment({ item, index })}
-          </View>
+          <View key={item.id}>{renderMoment({ item, index })}</View>
         ))}
       </View>
     </View>

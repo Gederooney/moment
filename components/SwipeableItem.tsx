@@ -34,11 +34,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
   showArchiveAction = false,
   swipeThreshold = 40,
 }) => {
-  const {
-    swipeableRef,
-    handleDelete,
-    handleArchive,
-  } = useSwipeActions({
+  const { swipeableRef, handleDelete, handleArchive } = useSwipeActions({
     onDelete,
     onArchive,
     deleteConfirmTitle,
@@ -67,10 +63,7 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
           style={[
             styles.deleteAction,
             {
-              transform: [
-                { scale: deleteScale },
-                { translateX: deleteTranslate },
-              ],
+              transform: [{ scale: deleteScale }, { translateX: deleteTranslate }],
             },
           ]}
         >
@@ -91,49 +84,48 @@ export const SwipeableItem: React.FC<SwipeableItemProps> = ({
   };
 
   // Left actions (swipe right to reveal archive) - Optional
-  const renderLeftActions = showArchiveAction ? (
-    progress: Animated.AnimatedInterpolation<number>,
-    dragX: Animated.AnimatedInterpolation<number>
-  ) => {
-    const archiveScale = progress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-    });
+  const renderLeftActions = showArchiveAction
+    ? (
+        progress: Animated.AnimatedInterpolation<number>,
+        dragX: Animated.AnimatedInterpolation<number>
+      ) => {
+        const archiveScale = progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 1],
+        });
 
-    const archiveTranslate = dragX.interpolate({
-      inputRange: [0, 50, 100],
-      outputRange: [-100, -25, 0],
-      extrapolate: 'clamp',
-    });
+        const archiveTranslate = dragX.interpolate({
+          inputRange: [0, 50, 100],
+          outputRange: [-100, -25, 0],
+          extrapolate: 'clamp',
+        });
 
-    return (
-      <View style={styles.leftActions}>
-        <Animated.View
-          style={[
-            styles.archiveAction,
-            {
-              transform: [
-                { scale: archiveScale },
-                { translateX: archiveTranslate },
-              ],
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.archiveButton}
-            onPress={handleArchive}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel="Archiver"
-            accessibilityHint="Archiver cet élément"
-          >
-            <Ionicons name="archive" size={20} color={Colors.background.white} />
-            <Text style={styles.archiveText}>Archiver</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-    );
-  } : undefined;
+        return (
+          <View style={styles.leftActions}>
+            <Animated.View
+              style={[
+                styles.archiveAction,
+                {
+                  transform: [{ scale: archiveScale }, { translateX: archiveTranslate }],
+                },
+              ]}
+            >
+              <TouchableOpacity
+                style={styles.archiveButton}
+                onPress={handleArchive}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Archiver"
+                accessibilityHint="Archiver cet élément"
+              >
+                <Ionicons name="archive" size={20} color={Colors.background.white} />
+                <Text style={styles.archiveText}>Archiver</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        );
+      }
+    : undefined;
 
   return (
     <Swipeable

@@ -11,9 +11,7 @@ export const SettingSection: React.FC<SettingSectionProps> = ({ title, children 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>
-        {children}
-      </View>
+      <View style={styles.sectionContent}>{children}</View>
     </View>
   );
 };

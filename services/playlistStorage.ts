@@ -25,7 +25,6 @@ export class PlaylistStorage {
       await AsyncStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(serializedPlaylists));
       await AsyncStorage.setItem(STORAGE_KEYS.SCHEMA_VERSION, CURRENT_SCHEMA_VERSION.toString());
     } catch (error) {
-      console.error('Failed to save playlists:', error);
       throw new Error('Failed to save playlists');
     }
   }
@@ -60,7 +59,6 @@ export class PlaylistStorage {
         })),
       }));
     } catch (error) {
-      console.error('Failed to load playlists:', error);
       return [];
     }
   }
@@ -72,16 +70,13 @@ export class PlaylistStorage {
       } else {
         await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_PLAYLIST_ID);
       }
-    } catch (error) {
-      console.error('Failed to save active playlist ID:', error);
-    }
+    } catch (error) {}
   }
 
   static async loadActivePlaylistId(): Promise<string | null> {
     try {
       return await AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_PLAYLIST_ID);
     } catch (error) {
-      console.error('Failed to load active playlist ID:', error);
       return null;
     }
   }
@@ -93,14 +88,10 @@ export class PlaylistStorage {
         AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_PLAYLIST_ID),
         AsyncStorage.removeItem(STORAGE_KEYS.SCHEMA_VERSION),
       ]);
-    } catch (error) {
-      console.error('Failed to clear playlist data:', error);
-    }
+    } catch (error) {}
   }
 
   private static async migrateSchema(playlists: any[], fromVersion: number): Promise<any[]> {
-    console.log(`Migrating playlist schema from version ${fromVersion} to ${CURRENT_SCHEMA_VERSION}`);
-
     let migratedPlaylists = [...playlists];
 
     // Example migration (add future migrations here)
@@ -125,7 +116,6 @@ export class PlaylistStorage {
       const playlists = await this.loadPlaylists();
       return JSON.stringify(playlists, null, 2);
     } catch (error) {
-      console.error('Failed to export playlists:', error);
       throw new Error('Failed to export playlists');
     }
   }
@@ -152,7 +142,6 @@ export class PlaylistStorage {
 
       await this.savePlaylists(validatedPlaylists);
     } catch (error) {
-      console.error('Failed to import playlists:', error);
       throw new Error('Failed to import playlists');
     }
   }
@@ -170,14 +159,12 @@ export class PlaylistStorage {
       // Remove duplicate videos in playlists
       const cleanedPlaylists = playlists.map(playlist => ({
         ...playlist,
-        videos: playlist.videos.filter((video, index, arr) =>
-          arr.findIndex(v => v.videoId === video.videoId) === index
+        videos: playlist.videos.filter(
+          (video, index, arr) => arr.findIndex(v => v.videoId === video.videoId) === index
         ),
       }));
 
       await this.savePlaylists(cleanedPlaylists);
-    } catch (error) {
-      console.error('Failed to cleanup orphaned data:', error);
-    }
+    } catch (error) {}
   }
 }

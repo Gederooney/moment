@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -79,35 +73,32 @@ export const QualityPicker: React.FC<QualityPickerProps> = ({
           </Text>
 
           <View style={styles.optionsContainer}>
-            {QUALITY_OPTIONS.map((option) => (
+            {QUALITY_OPTIONS.map(option => (
               <TouchableOpacity
                 key={option.value}
-                style={[
-                  styles.option,
-                  selectedQuality === option.value && styles.optionSelected,
-                ]}
+                style={[styles.option, selectedQuality === option.value && styles.optionSelected]}
                 onPress={() => handleSelect(option.value)}
               >
                 <View style={styles.optionContent}>
-                  <Text style={[
-                    styles.optionText,
-                    selectedQuality === option.value && styles.optionTextSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedQuality === option.value && styles.optionTextSelected,
+                    ]}
+                  >
                     {option.label}
                   </Text>
-                  <Text style={[
-                    styles.optionDescription,
-                    selectedQuality === option.value && styles.optionDescriptionSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.optionDescription,
+                      selectedQuality === option.value && styles.optionDescriptionSelected,
+                    ]}
+                  >
                     {option.description}
                   </Text>
                 </View>
                 {selectedQuality === option.value && (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={Colors.primary}
-                  />
+                  <Ionicons name="checkmark" size={20} color={Colors.primary} />
                 )}
               </TouchableOpacity>
             ))}

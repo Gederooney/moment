@@ -56,7 +56,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
           duration: 1000,
           useNativeDriver: true,
         }),
-      ]),
+      ])
     );
 
     pulseAnimation.start();
@@ -114,8 +114,8 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
         backgroundColor: disabled
           ? '#E0E0E0'
           : loading
-          ? '#FF3B30B0' // Semi-transparent rouge
-          : '#FF3B30', // Rouge YouTube
+            ? '#FF3B30B0' // Semi-transparent rouge
+            : '#FF3B30', // Rouge YouTube
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#FF3B30',
@@ -135,8 +135,8 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
         backgroundColor: disabled
           ? colors.background.disabled
           : loading
-          ? colors.primary + '80'
-          : colors.primary,
+            ? colors.primary + '80'
+            : colors.primary,
         ...GlowShadows.capture,
       };
     }
@@ -146,8 +146,8 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
       backgroundColor: disabled
         ? colors.background.disabled
         : loading
-        ? colors.primary + '80'
-        : colors.primary,
+          ? colors.primary + '80'
+          : colors.primary,
       ...ComponentShadows.captureButton,
     };
   };
@@ -169,22 +169,19 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
       <Animated.View
         style={[
           {
-            transform: [
-              { scale: Animated.multiply(scaleValue, pulseValue) },
-            ],
+            transform: [{ scale: Animated.multiply(scaleValue, pulseValue) }],
           },
           disabled && { opacity: 0.5 },
         ]}
       >
         <TouchableOpacity
-          style={[
-            getButtonStyle(),
-            disabled && styles.buttonDisabled,
-          ]}
+          style={[getButtonStyle(), disabled && styles.buttonDisabled]}
           onPress={handlePress}
           disabled={disabled || loading}
           activeOpacity={0.7}
-          accessibilityLabel={accessibilityLabel || `Capturer le moment à ${formatTime(currentTime)}`}
+          accessibilityLabel={
+            accessibilityLabel || `Capturer le moment à ${formatTime(currentTime)}`
+          }
           accessibilityRole="button"
           accessibilityState={{
             disabled: disabled || loading,
@@ -193,10 +190,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
           accessibilityHint="Appuyez pour capturer ce moment de la vidéo"
         >
           {loading ? (
-            <ActivityIndicator
-              size="large"
-              color="white"
-            />
+            <ActivityIndicator size="large" color="white" />
           ) : (
             <Ionicons
               name="radio-button-on"
@@ -214,19 +208,13 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
       style={[
         styles.container,
         {
-          transform: [
-            { scale: Animated.multiply(scaleValue, pulseValue) },
-          ],
+          transform: [{ scale: Animated.multiply(scaleValue, pulseValue) }],
         },
         disabled && styles.containerDisabled,
       ]}
     >
       <TouchableOpacity
-        style={[
-          styles.button,
-          getButtonStyle(),
-          disabled && styles.buttonDisabled,
-        ]}
+        style={[styles.button, getButtonStyle(), disabled && styles.buttonDisabled]}
         onPress={handlePress}
         disabled={disabled || loading}
         activeOpacity={0.8}
@@ -249,11 +237,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
                   },
                 ]}
               >
-                <Ionicons
-                  name="hourglass-outline"
-                  size={getIconSize()}
-                  color={colors.text.white}
-                />
+                <Ionicons name="hourglass-outline" size={getIconSize()} color={colors.text.white} />
               </Animated.View>
             </View>
           ) : (
@@ -265,20 +249,24 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
           )}
         </View>
         <View style={styles.textContainer}>
-          <Text style={[
-            getTextStyle(),
-            styles.buttonText,
-            { color: disabled ? colors.text.tertiary : colors.text.white },
-            disabled && styles.buttonTextDisabled,
-          ]}>
+          <Text
+            style={[
+              getTextStyle(),
+              styles.buttonText,
+              { color: disabled ? colors.text.tertiary : colors.text.white },
+              disabled && styles.buttonTextDisabled,
+            ]}
+          >
             {loading ? 'CAPTURE EN COURS...' : 'CAPTURER CE MOMENT'}
           </Text>
-          <Text style={[
-            drivingMode ? DrivingTypography.info : Typography.small,
-            styles.timeText,
-            { color: disabled ? colors.text.tertiary : colors.text.white },
-            disabled && styles.timeTextDisabled,
-          ]}>
+          <Text
+            style={[
+              drivingMode ? DrivingTypography.info : Typography.small,
+              styles.timeText,
+              { color: disabled ? colors.text.tertiary : colors.text.white },
+              disabled && styles.timeTextDisabled,
+            ]}
+          >
             à {formatTime(currentTime)}
           </Text>
         </View>

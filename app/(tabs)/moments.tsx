@@ -70,7 +70,7 @@ export default function MomentsScreen() {
 
   // Subscribe to real-time moment updates
   useEffect(() => {
-    const unsubscribe = subscribeMomentUpdates((updatedVideos) => {
+    const unsubscribe = subscribeMomentUpdates(updatedVideos => {
       // The context will automatically update the videos state
       // This callback can be used for additional real-time UI updates if needed
     });
@@ -84,33 +84,42 @@ export default function MomentsScreen() {
   }, [setTitle]);
 
   const handleToggleExpand = useCallback((videoId: string) => {
-    setExpandedVideoId(current => current === videoId ? null : videoId);
+    setExpandedVideoId(current => (current === videoId ? null : videoId));
   }, []);
 
-  const handlePlayMoment = useCallback((videoId: string, timestamp: number) => {
-    // Navigate to player screen with video and timestamp
-    const video = videos.find(v => v.id === videoId);
-    router.push({
-      pathname: '/player',
-      params: {
-        videoId,
-        timestamp: timestamp.toString(),
-        title: video?.title || 'Vidéo YouTube',
-        author: video?.author || '',
-        thumbnail: video?.thumbnailFromApi || video?.thumbnail || '',
-        url: video?.url || `https://youtube.com/watch?v=${videoId}`,
-        isFromApi: (video?.metadataLoadedFromApi || false).toString(),
-      },
-    });
-  }, [router, videos]);
+  const handlePlayMoment = useCallback(
+    (videoId: string, timestamp: number) => {
+      // Navigate to player screen with video and timestamp
+      const video = videos.find(v => v.id === videoId);
+      router.push({
+        pathname: '/player',
+        params: {
+          videoId,
+          timestamp: timestamp.toString(),
+          title: video?.title || 'Vidéo YouTube',
+          author: video?.author || '',
+          thumbnail: video?.thumbnailFromApi || video?.thumbnail || '',
+          url: video?.url || `https://youtube.com/watch?v=${videoId}`,
+          isFromApi: (video?.metadataLoadedFromApi || false).toString(),
+        },
+      });
+    },
+    [router, videos]
+  );
 
-  const handleDeleteMoment = useCallback(async (momentId: string) => {
-    await deleteMoment(momentId);
-  }, [deleteMoment]);
+  const handleDeleteMoment = useCallback(
+    async (momentId: string) => {
+      await deleteMoment(momentId);
+    },
+    [deleteMoment]
+  );
 
-  const handleDeleteAllMomentsForVideo = useCallback(async (videoId: string) => {
-    await deleteAllMomentsForVideo(videoId);
-  }, [deleteAllMomentsForVideo]);
+  const handleDeleteAllMomentsForVideo = useCallback(
+    async (videoId: string) => {
+      await deleteAllMomentsForVideo(videoId);
+    },
+    [deleteAllMomentsForVideo]
+  );
 
   const handleClearAllHistory = useCallback(() => {
     Alert.alert(
@@ -162,7 +171,7 @@ export default function MomentsScreen() {
       const videoId = extractVideoId(normalizedUrl);
 
       if (!videoId) {
-        Alert.alert('Erreur', 'Impossible d\'extraire l\'ID de la vidéo.');
+        Alert.alert('Erreur', "Impossible d'extraire l'ID de la vidéo.");
         return;
       }
 
@@ -185,38 +194,41 @@ export default function MomentsScreen() {
         },
       });
     } catch (error) {
-      console.error('Error adding video:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de charger les informations de la vidéo. Vérifiez l\'URL et votre connexion internet.'
+        "Impossible de charger les informations de la vidéo. Vérifiez l'URL et votre connexion internet."
       );
     } finally {
       setIsLoadingMetadata(false);
     }
   }, [isUrlValid, isLoadingMetadata, videoUrl, hideAddVideoModal, router]);
 
-  const renderVideoItem = useCallback(({ item }: { item: VideoWithMoments }) => (
-    <VideoAccordion
-      video={item}
-      isExpanded={expandedVideoId === item.id}
-      onToggleExpand={() => handleToggleExpand(item.id)}
-      onPlayMoment={handlePlayMoment}
-      onDeleteMoment={handleDeleteMoment}
-      onDeleteAllMoments={handleDeleteAllMomentsForVideo}
-    />
-  ), [expandedVideoId, handleToggleExpand, handlePlayMoment, handleDeleteMoment, handleDeleteAllMomentsForVideo]);
+  const renderVideoItem = useCallback(
+    ({ item }: { item: VideoWithMoments }) => (
+      <VideoAccordion
+        video={item}
+        isExpanded={expandedVideoId === item.id}
+        onToggleExpand={() => handleToggleExpand(item.id)}
+        onPlayMoment={handlePlayMoment}
+        onDeleteMoment={handleDeleteMoment}
+        onDeleteAllMoments={handleDeleteAllMomentsForVideo}
+      />
+    ),
+    [
+      expandedVideoId,
+      handleToggleExpand,
+      handlePlayMoment,
+      handleDeleteMoment,
+      handleDeleteAllMomentsForVideo,
+    ]
+  );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="bookmark-outline" size={64} color={Colors.text.light} />
       <Text style={styles.emptyTitle}>Aucun moment</Text>
-      <Text style={styles.emptySubtitle}>
-        Les moments que vous capturez apparaîtront ici
-      </Text>
-      <TouchableOpacity
-        style={styles.goToHomeButton}
-        onPress={() => router.push('/(tabs)/')}
-      >
+      <Text style={styles.emptySubtitle}>Les moments que vous capturez apparaîtront ici</Text>
+      <TouchableOpacity style={styles.goToHomeButton} onPress={() => router.push('/(tabs)/')}>
         <Ionicons name="home-outline" size={20} color={Colors.primary} />
         <Text style={styles.goToHomeText}>Aller à l'accueil</Text>
       </TouchableOpacity>
@@ -227,13 +239,8 @@ export default function MomentsScreen() {
     <View style={styles.emptyState}>
       <Ionicons name="search-outline" size={64} color={Colors.text.light} />
       <Text style={styles.emptyTitle}>Aucun résultat</Text>
-      <Text style={styles.emptySubtitle}>
-        Aucune vidéo ne correspond à "{searchQuery}"
-      </Text>
-      <TouchableOpacity
-        style={styles.clearSearchButton}
-        onPress={() => setSearchQuery('')}
-      >
+      <Text style={styles.emptySubtitle}>Aucune vidéo ne correspond à "{searchQuery}"</Text>
+      <TouchableOpacity style={styles.clearSearchButton} onPress={() => setSearchQuery('')}>
         <Text style={styles.clearSearchText}>Effacer la recherche</Text>
       </TouchableOpacity>
     </View>
@@ -286,12 +293,10 @@ export default function MomentsScreen() {
         {videos.length > 0 && (
           <View style={styles.statsContainer}>
             <Text style={styles.statsText}>
-              {videos.length} vidéo{videos.length > 1 ? 's' : ''} • {getTotalMomentsCount()} moment{getTotalMomentsCount() > 1 ? 's' : ''}
+              {videos.length} vidéo{videos.length > 1 ? 's' : ''} • {getTotalMomentsCount()} moment
+              {getTotalMomentsCount() > 1 ? 's' : ''}
             </Text>
-            <TouchableOpacity
-              style={styles.clearAllButton}
-              onPress={handleClearAllHistory}
-            >
+            <TouchableOpacity style={styles.clearAllButton} onPress={handleClearAllHistory}>
               <Ionicons name="trash-outline" size={16} color={Colors.error} />
               <Text style={styles.clearAllText}>Tout effacer</Text>
             </TouchableOpacity>
@@ -303,7 +308,7 @@ export default function MomentsScreen() {
       <FlatList
         data={filteredVideos}
         renderItem={renderVideoItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={[
           styles.listContent,
           filteredVideos.length === 0 && styles.listContentCentered,
@@ -318,8 +323,7 @@ export default function MomentsScreen() {
           />
         }
         ListEmptyComponent={
-          videos.length === 0 ? renderEmptyState() :
-          searchQuery ? renderSearchEmptyState() : null
+          videos.length === 0 ? renderEmptyState() : searchQuery ? renderSearchEmptyState() : null
         }
         // Optimize performance for large lists
         removeClippedSubviews={true}
@@ -349,14 +353,10 @@ export default function MomentsScreen() {
           <Animated.View
             style={[
               StyleSheet.absoluteFillObject,
-              { backgroundColor: 'rgba(0, 0, 0, 0.6)', opacity: modalAnimation }
+              { backgroundColor: 'rgba(0, 0, 0, 0.6)', opacity: modalAnimation },
             ]}
           >
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              onPress={hideAddVideoModal}
-              activeOpacity={1}
-            />
+            <TouchableOpacity style={{ flex: 1 }} onPress={hideAddVideoModal} activeOpacity={1} />
           </Animated.View>
 
           {/* Bottom Sheet */}
@@ -368,28 +368,40 @@ export default function MomentsScreen() {
                 borderTopLeftRadius: 20,
                 borderTopRightRadius: 20,
                 paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-                transform: [{
-                  translateY: modalAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [320, 0],
-                  })
-                }],
+                transform: [
+                  {
+                    translateY: modalAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [320, 0],
+                    }),
+                  },
+                ],
               },
             ]}
           >
             {/* Handle */}
-            <View style={{
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: Colors.border.medium,
-              alignSelf: 'center',
-              marginTop: 12,
-              marginBottom: 20,
-            }} />
+            <View
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: Colors.border.medium,
+                alignSelf: 'center',
+                marginTop: 12,
+                marginBottom: 20,
+              }}
+            />
 
             {/* Header */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingHorizontal: 20,
+                marginBottom: 20,
+              }}
+            >
               <Text style={{ fontSize: 20, fontWeight: '600', color: Colors.text.primary }}>
                 Ajouter une vidéo
               </Text>
@@ -400,7 +412,16 @@ export default function MomentsScreen() {
 
             {/* Content */}
             <View style={{ flex: 1, paddingHorizontal: 20 }}>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: Colors.text.secondary, marginBottom: 8 }}>URL YouTube</Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: '500',
+                  color: Colors.text.secondary,
+                  marginBottom: 8,
+                }}
+              >
+                URL YouTube
+              </Text>
 
               <View style={{ position: 'relative', marginBottom: 8 }}>
                 <Ionicons
@@ -421,7 +442,10 @@ export default function MomentsScreen() {
                       color: Colors.text.primary,
                       backgroundColor: Colors.background.tertiary,
                     },
-                    isUrlValid && { borderColor: Colors.success, backgroundColor: Colors.background.white },
+                    isUrlValid && {
+                      borderColor: Colors.success,
+                      backgroundColor: Colors.background.white,
+                    },
                     videoUrl.length > 0 && !isUrlValid && { borderColor: Colors.error },
                     !isUrlValid && !videoUrl.length && { borderColor: Colors.border.light },
                   ]}
@@ -457,15 +481,13 @@ export default function MomentsScreen() {
                       alignItems: 'center',
                       backgroundColor: '#333333',
                     },
-                    isLoadingMetadata && { opacity: 0.5 }
+                    isLoadingMetadata && { opacity: 0.5 },
                   ]}
                   onPress={hideAddVideoModal}
                   disabled={isLoadingMetadata}
                   activeOpacity={0.8}
                 >
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>
-                    Annuler
-                  </Text>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#FFFFFF' }}>Annuler</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -478,7 +500,7 @@ export default function MomentsScreen() {
                       alignItems: 'center',
                       backgroundColor: Colors.primary,
                     },
-                    (!isUrlValid || isLoadingMetadata) && { opacity: 0.5 }
+                    (!isUrlValid || isLoadingMetadata) && { opacity: 0.5 },
                   ]}
                   onPress={handleAddVideo}
                   disabled={!isUrlValid || isLoadingMetadata}

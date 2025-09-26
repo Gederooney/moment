@@ -60,13 +60,11 @@ export function useVideoProcessor(): UseVideoProcessorResult {
               await StorageService.addToHistory(historyItem);
             }
           } catch (pollError) {
-            console.error('Error polling job status:', pollError);
             setError('Erreur lors du traitement de la vidéo');
           }
         }, 3000);
       }
     } catch (err) {
-      console.error('Error processing video:', err);
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {
       setIsLoading(false);

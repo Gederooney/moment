@@ -20,7 +20,14 @@ interface MomentsContextType {
   notifyMomentAdded: (videoId: string, moment: CapturedMoment) => void;
   subscribeMomentUpdates: (callback: (videos: VideoWithMoments[]) => void) => () => void;
   // New unified capture methods
-  captureMoment: (videoId: string, timestamp: number, duration?: number, videoTitle?: string, videoUrl?: string, thumbnailUrl?: string) => Promise<CapturedMoment>;
+  captureMoment: (
+    videoId: string,
+    timestamp: number,
+    duration?: number,
+    videoTitle?: string,
+    videoUrl?: string,
+    thumbnailUrl?: string
+  ) => Promise<CapturedMoment>;
   getMomentsForVideo: (videoId: string) => CapturedMoment[];
   deleteMomentFromVideo: (videoId: string, momentId: string) => Promise<void>;
 }
@@ -45,25 +52,34 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
   }, []);
 
   // Enhanced addMomentToVideo with real-time sync
-  const addMomentToVideo = useCallback(async (videoId: string, moment: CapturedMoment) => {
-    await videoHistory.addMomentToVideo(videoId, moment);
-    // Notify all subscribers immediately
-    notifySubscribers(videoHistory.videos);
-  }, [videoHistory.addMomentToVideo, notifySubscribers]);
+  const addMomentToVideo = useCallback(
+    async (videoId: string, moment: CapturedMoment) => {
+      await videoHistory.addMomentToVideo(videoId, moment);
+      // Notify all subscribers immediately
+      notifySubscribers(videoHistory.videos);
+    },
+    [videoHistory.addMomentToVideo, notifySubscribers]
+  );
 
   // Enhanced deleteMoment with real-time sync
-  const deleteMoment = useCallback(async (momentId: string) => {
-    await videoHistory.deleteMoment(momentId);
-    // Notify all subscribers immediately
-    notifySubscribers(videoHistory.videos);
-  }, [videoHistory.deleteMoment, notifySubscribers]);
+  const deleteMoment = useCallback(
+    async (momentId: string) => {
+      await videoHistory.deleteMoment(momentId);
+      // Notify all subscribers immediately
+      notifySubscribers(videoHistory.videos);
+    },
+    [videoHistory.deleteMoment, notifySubscribers]
+  );
 
   // Enhanced deleteAllMomentsForVideo with real-time sync
-  const deleteAllMomentsForVideo = useCallback(async (videoId: string) => {
-    await videoHistory.deleteAllMomentsForVideo(videoId);
-    // Notify all subscribers immediately
-    notifySubscribers(videoHistory.videos);
-  }, [videoHistory.deleteAllMomentsForVideo, notifySubscribers]);
+  const deleteAllMomentsForVideo = useCallback(
+    async (videoId: string) => {
+      await videoHistory.deleteAllMomentsForVideo(videoId);
+      // Notify all subscribers immediately
+      notifySubscribers(videoHistory.videos);
+    },
+    [videoHistory.deleteAllMomentsForVideo, notifySubscribers]
+  );
 
   // Enhanced clearAllHistory with real-time sync
   const clearAllHistory = useCallback(async () => {
@@ -83,65 +99,77 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
   }, []);
 
   // Function to manually trigger moment addition notification (for external use)
-  const notifyMomentAdded = useCallback((videoId: string, moment: CapturedMoment) => {
-    // This is called after the moment is added to trigger real-time updates
-    notifySubscribers(videoHistoryRef.current.videos);
-  }, [notifySubscribers]);
+  const notifyMomentAdded = useCallback(
+    (videoId: string, moment: CapturedMoment) => {
+      // This is called after the moment is added to trigger real-time updates
+      notifySubscribers(videoHistoryRef.current.videos);
+    },
+    [notifySubscribers]
+  );
 
   // NEW UNIFIED CAPTURE METHOD - Directly captures moments from the player
-  const captureMoment = useCallback(async (
-    videoId: string,
-    timestamp: number,
-    duration: number = 30,
-    videoTitle?: string,
-    videoUrl?: string,
-    thumbnailUrl?: string
-  ): Promise<CapturedMoment> => {
-    // Use the duration passed as parameter (which comes from settings)
-    const momentDuration = duration;
+  const captureMoment = useCallback(
+    async (
+      videoId: string,
+      timestamp: number,
+      duration: number = 30,
+      videoTitle?: string,
+      videoUrl?: string,
+      thumbnailUrl?: string
+    ): Promise<CapturedMoment> => {
+      // Use the duration passed as parameter (which comes from settings)
+      const momentDuration = duration;
 
-    const newMoment: CapturedMoment = {
-      id: `${videoId}_${timestamp}_${Date.now()}`,
-      videoId,
-      timestamp,
-      duration: momentDuration,
-      title: `Moment à ${formatTime(timestamp)}`,
-      createdAt: new Date(),
-    };
+      const newMoment: CapturedMoment = {
+        id: `${videoId}_${timestamp}_${Date.now()}`,
+        videoId,
+        timestamp,
+        duration: momentDuration,
+        title: `Moment à ${formatTime(timestamp)}`,
+        createdAt: new Date(),
+      };
 
-    // Ensure video exists in history before adding moment
-    const existingVideo = videoHistory.getVideoById(videoId);
-    if (!existingVideo && videoTitle) {
-      // Create video in history if it doesn't exist with enriched metadata
-      await videoHistory.addVideoToHistory({
-        id: videoId,
-        title: videoTitle,
-        thumbnail: thumbnailUrl || getVideoThumbnail(videoId),
-        url: videoUrl || `https://youtube.com/watch?v=${videoId}`,
-        thumbnailFromApi: thumbnailUrl,
-        metadataLoadedFromApi: !!thumbnailUrl,
-      });
+      // Ensure video exists in history before adding moment
+      const existingVideo = videoHistory.getVideoById(videoId);
+      if (!existingVideo && videoTitle) {
+        // Create video in history if it doesn't exist with enriched metadata
+        await videoHistory.addVideoToHistory({
+          id: videoId,
+          title: videoTitle,
+          thumbnail: thumbnailUrl || getVideoThumbnail(videoId),
+          url: videoUrl || `https://youtube.com/watch?v=${videoId}`,
+          thumbnailFromApi: thumbnailUrl,
+          metadataLoadedFromApi: !!thumbnailUrl,
+        });
 
-      // Add a small delay to allow state to update
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+        // Add a small delay to allow state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
 
-    // Add moment to video with real-time sync
-    await addMomentToVideo(videoId, newMoment);
+      // Add moment to video with real-time sync
+      await addMomentToVideo(videoId, newMoment);
 
-    return newMoment;
-  }, [videoHistory, addMomentToVideo]);
+      return newMoment;
+    },
+    [videoHistory, addMomentToVideo]
+  );
 
   // NEW GET MOMENTS FOR VIDEO METHOD
-  const getMomentsForVideo = useCallback((videoId: string): CapturedMoment[] => {
-    const video = videoHistory.getVideoById(videoId);
-    return video?.moments || [];
-  }, [videoHistory]);
+  const getMomentsForVideo = useCallback(
+    (videoId: string): CapturedMoment[] => {
+      const video = videoHistory.getVideoById(videoId);
+      return video?.moments || [];
+    },
+    [videoHistory]
+  );
 
   // NEW DELETE MOMENT FROM VIDEO METHOD
-  const deleteMomentFromVideo = useCallback(async (videoId: string, momentId: string) => {
-    await deleteMoment(momentId);
-  }, [deleteMoment]);
+  const deleteMomentFromVideo = useCallback(
+    async (videoId: string, momentId: string) => {
+      await deleteMoment(momentId);
+    },
+    [deleteMoment]
+  );
 
   const contextValue: MomentsContextType = {
     videos: videoHistory.videos,
@@ -162,11 +190,7 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
     deleteMomentFromVideo,
   };
 
-  return (
-    <MomentsContext.Provider value={contextValue}>
-      {children}
-    </MomentsContext.Provider>
-  );
+  return <MomentsContext.Provider value={contextValue}>{children}</MomentsContext.Provider>;
 }
 
 export function useMomentsContext() {

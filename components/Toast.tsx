@@ -67,9 +67,9 @@ export const Toast: React.FC<ToastProps> = ({
   accessibilityLabel,
 }) => {
   const colors = getColors(isDark);
-  const translateY = useRef(new Animated.Value(
-    position === 'top' ? -TOAST_HEIGHT : TOAST_HEIGHT
-  )).current;
+  const translateY = useRef(
+    new Animated.Value(position === 'top' ? -TOAST_HEIGHT : TOAST_HEIGHT)
+  ).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const [isVisible, setIsVisible] = useState(false);
 
@@ -183,22 +183,30 @@ export const Toast: React.FC<ToastProps> = ({
     if (icon) return icon;
 
     switch (type) {
-      case 'success': return 'checkmark-circle';
-      case 'error': return 'close-circle';
-      case 'warning': return 'warning';
+      case 'success':
+        return 'checkmark-circle';
+      case 'error':
+        return 'close-circle';
+      case 'warning':
+        return 'warning';
       case 'info':
-      default: return 'information-circle';
+      default:
+        return 'information-circle';
     }
   };
 
   // Get icon color based on type
   const getIconColor = () => {
     switch (type) {
-      case 'success': return colors.success;
-      case 'error': return colors.error;
-      case 'warning': return colors.warning;
+      case 'success':
+        return colors.success;
+      case 'error':
+        return colors.error;
+      case 'warning':
+        return colors.warning;
       case 'info':
-      default: return colors.accent;
+      default:
+        return colors.accent;
     }
   };
 
@@ -210,9 +218,8 @@ export const Toast: React.FC<ToastProps> = ({
   const getTopPosition = () => {
     if (position === 'bottom') return undefined;
 
-    const statusBarHeight = Platform.OS === 'ios'
-      ? (StatusBar.currentHeight || 44)
-      : (StatusBar.currentHeight || 24);
+    const statusBarHeight =
+      Platform.OS === 'ios' ? StatusBar.currentHeight || 44 : StatusBar.currentHeight || 24;
 
     return statusBarHeight + Spacing.md;
   };
@@ -234,11 +241,7 @@ export const Toast: React.FC<ToastProps> = ({
       ]}
     >
       <TouchableOpacity
-        style={[
-          styles.toast,
-          toastStyles,
-          Shadows.lg,
-        ]}
+        style={[styles.toast, toastStyles, Shadows.lg]}
         onPress={handlePress}
         activeOpacity={0.9}
         accessibilityLabel={accessibilityLabel || message}
@@ -246,18 +249,12 @@ export const Toast: React.FC<ToastProps> = ({
       >
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons
-            name={iconName}
-            size={24}
-            color={iconColor}
-          />
+          <Ionicons name={iconName} size={24} color={iconColor} />
         </View>
 
         {/* Content */}
         <View style={styles.content}>
-          <Text style={[styles.message, { color: colors.text.primary }]}>
-            {message}
-          </Text>
+          <Text style={[styles.message, { color: colors.text.primary }]}>{message}</Text>
           {description && (
             <Text style={[styles.description, { color: colors.text.secondary }]}>
               {description}
@@ -268,15 +265,9 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Action or Close */}
         <View style={styles.actionContainer}>
           {actionText ? (
-            <Text style={[styles.actionText, { color: iconColor }]}>
-              {actionText}
-            </Text>
+            <Text style={[styles.actionText, { color: iconColor }]}>{actionText}</Text>
           ) : (
-            <Ionicons
-              name="close"
-              size={20}
-              color={colors.text.tertiary}
-            />
+            <Ionicons name="close" size={20} color={colors.text.tertiary} />
           )}
         </View>
       </TouchableOpacity>

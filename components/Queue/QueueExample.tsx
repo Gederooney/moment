@@ -61,10 +61,10 @@ export const QueueExample: React.FC = () => {
           };
 
           setVideos(prev => [...prev, newVideo]);
-          Alert.alert('Succès', 'Vidéo ajoutée à la file d\'attente');
+          Alert.alert('Succès', "Vidéo ajoutée à la file d'attente");
           resolve();
         } catch (error) {
-          reject(new Error('Impossible d\'ajouter la vidéo'));
+          reject(new Error("Impossible d'ajouter la vidéo"));
         }
       }, 1000); // Simulate loading time
     });

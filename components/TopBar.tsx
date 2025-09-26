@@ -1,11 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Platform,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTopBarContext } from '../contexts/TopBarContext';
@@ -13,29 +7,22 @@ import { useRouter } from 'expo-router';
 
 interface TopBarProps {
   title: string;
-  showBackButton?: boolean;
   backButtonText?: string;
-  onBackPress?: () => void;
 }
 
-const TopBarComponent = React.memo(function TopBar({
-  title,
-  showBackButton = false,
-  backButtonText = '',
-  onBackPress,
-}: TopBarProps) {
+const TopBarComponent = React.memo(function TopBar({ title, backButtonText = '' }: TopBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { state } = useTopBarContext();
 
-  // Auto-detect if we should show back button based on video state
-  const shouldShowBackButton = showBackButton || !!state.currentVideoId;
+  // Auto-detect if we should show back button based on context state or video state
+  const shouldShowBackButton = state.showBackButton || !!state.currentVideoId;
   const displayTitle = state.currentVideoId ? state.title : title;
 
   // Handle back button press
   const handleBackPress = () => {
-    if (onBackPress) {
-      onBackPress();
+    if (state.onBackPress) {
+      state.onBackPress();
     } else {
       router.back();
     }

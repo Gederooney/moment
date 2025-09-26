@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useCallback, useRef } from 
 interface TopBarState {
   currentVideoId?: string;
   title: string;
+  showBackButton: boolean;
+  onBackPress: (() => void) | null;
 }
 
 interface TopBarContextType {
@@ -11,6 +13,7 @@ interface TopBarContextType {
   setVideoState: (videoId: string, title: string) => void;
   clearVideoState: () => void;
   registerBackNavigation: (onGoBack: () => void) => () => void;
+  setBackButton: (show: boolean, onPress?: () => void) => void;
 }
 
 const TopBarContext = createContext<TopBarContextType | undefined>(undefined);
@@ -22,6 +25,8 @@ interface TopBarProviderProps {
 export function TopBarProvider({ children }: TopBarProviderProps) {
   const [state, setState] = useState<TopBarState>({
     title: 'Moments',
+    showBackButton: false,
+    onBackPress: null,
   });
 
   const backNavigationRef = useRef<(() => void) | null>(null);
@@ -30,18 +35,28 @@ export function TopBarProvider({ children }: TopBarProviderProps) {
     setState(prev => ({ ...prev, title }));
   }, []);
 
+  const setBackButton = useCallback((show: boolean, onPress?: () => void) => {
+    setState(prev => ({
+      ...prev,
+      showBackButton: show,
+      onBackPress: show ? onPress || null : null,
+    }));
+  }, []);
+
   const setVideoState = useCallback((videoId: string, title: string) => {
-    setState({
+    setState(prev => ({
+      ...prev,
       currentVideoId: videoId,
       title: title,
-    });
+    }));
   }, []);
 
   const clearVideoState = useCallback(() => {
-    setState({
+    setState(prev => ({
+      ...prev,
       currentVideoId: undefined,
       title: 'Moments',
-    });
+    }));
   }, []);
 
   const registerBackNavigation = useCallback((onGoBack: () => void) => {
@@ -59,13 +74,10 @@ export function TopBarProvider({ children }: TopBarProviderProps) {
     setVideoState,
     clearVideoState,
     registerBackNavigation,
+    setBackButton,
   };
 
-  return (
-    <TopBarContext.Provider value={contextValue}>
-      {children}
-    </TopBarContext.Provider>
-  );
+  return <TopBarContext.Provider value={contextValue}>{children}</TopBarContext.Provider>;
 }
 
 export function useTopBarContext() {

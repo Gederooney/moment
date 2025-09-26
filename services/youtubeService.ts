@@ -21,10 +21,7 @@ export class YouTubeService {
   }
 
   static extractVideoId(url: string): string | null {
-    const patterns = [
-      /youtube\.com\/watch\?v=([^&]+)/,
-      /youtu\.be\/([^?]+)/,
-    ];
+    const patterns = [/youtube\.com\/watch\?v=([^&]+)/, /youtu\.be\/([^?]+)/];
 
     for (const pattern of patterns) {
       const match = url.match(pattern);
@@ -45,7 +42,7 @@ export class YouTubeService {
     }
 
     // Simulation pour le développement
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
         resolve({
           id: videoId,
@@ -67,7 +64,7 @@ export class YouTubeService {
     }
 
     // Simulation pour le développement
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
         resolve({
           jobId: `job_${Date.now()}`,
@@ -81,7 +78,7 @@ export class YouTubeService {
     // TODO: Implémenter l'appel API réel
 
     // Simulation pour le développement
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
         resolve({
           jobId,

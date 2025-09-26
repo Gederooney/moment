@@ -84,7 +84,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   }, [visible]);
 
   const validateYouTubeUrl = (inputUrl: string): boolean => {
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}(&.*)?$/;
+    const youtubeRegex =
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}(&.*)?$/;
     return youtubeRegex.test(inputUrl.trim());
   };
 
@@ -108,8 +109,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
       await onAddVideo(trimmedUrl);
       onClose();
     } catch (err) {
-      setError('Erreur lors de l\'ajout de la vidéo');
-      console.error('Error adding video:', err);
+      setError("Erreur lors de l'ajout de la vidéo");
     } finally {
       setIsLoading(false);
     }
@@ -130,23 +130,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
   if (!visible) return null;
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      onRequestClose={handleClose}
-      statusBarTranslucent
-    >
+    <Modal transparent visible={visible} onRequestClose={handleClose} statusBarTranslucent>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Overlay */}
-        <Animated.View
-          style={[
-            styles.overlay,
-            { opacity: overlayOpacity }
-          ]}
-        >
+        <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]}>
           <TouchableOpacity
             style={styles.overlayTouchable}
             onPress={handleOverlayPress}
@@ -169,9 +159,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.text.primary }]}>
-              Ajouter une vidéo
-            </Text>
+            <Text style={[styles.title, { color: colors.text.primary }]}>Ajouter une vidéo</Text>
             <TouchableOpacity
               onPress={handleClose}
               disabled={isLoading}
@@ -179,19 +167,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
               accessibilityLabel="Fermer"
               accessibilityRole="button"
             >
-              <Ionicons
-                name="close"
-                size={24}
-                color={colors.text.secondary}
-              />
+              <Ionicons name="close" size={24} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
 
           {/* Content */}
           <View style={styles.content}>
-            <Text style={[styles.label, { color: colors.text.secondary }]}>
-              URL YouTube
-            </Text>
+            <Text style={[styles.label, { color: colors.text.secondary }]}>URL YouTube</Text>
 
             <View style={styles.inputContainer}>
               <Ionicons
@@ -210,7 +192,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                   },
                 ]}
                 value={url}
-                onChangeText={(text) => {
+                onChangeText={text => {
                   setUrl(text);
                   if (error) setError('');
                 }}
@@ -228,9 +210,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
             </View>
 
             {error ? (
-              <Text style={[styles.errorText, { color: colors.error }]}>
-                {error}
-              </Text>
+              <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
             ) : null}
 
             {/* Buttons */}
@@ -240,15 +220,13 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                   styles.button,
                   styles.cancelButton,
                   { backgroundColor: '#333333' },
-                  isLoading && styles.buttonDisabled
+                  isLoading && styles.buttonDisabled,
                 ]}
                 onPress={handleClose}
                 disabled={isLoading}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>
-                  Annuler
-                </Text>
+                <Text style={[styles.buttonText, { color: '#FFFFFF' }]}>Annuler</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -256,7 +234,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
                   styles.button,
                   styles.addButton,
                   { backgroundColor: colors.primary },
-                  (!url.trim() || isLoading) && styles.buttonDisabled
+                  (!url.trim() || isLoading) && styles.buttonDisabled,
                 ]}
                 onPress={handleAddVideo}
                 disabled={!url.trim() || isLoading}

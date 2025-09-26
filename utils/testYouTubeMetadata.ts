@@ -3,7 +3,10 @@
  * À utiliser pour tester l'intégration pendant le développement
  */
 
-import { fetchYouTubeMetadata, fetchYouTubeMetadataWithFallback } from '../services/youtubeMetadata';
+import {
+  fetchYouTubeMetadata,
+  fetchYouTubeMetadataWithFallback,
+} from '../services/youtubeMetadata';
 
 // URLs de test YouTube
 const TEST_URLS = [
@@ -49,7 +52,8 @@ async function testSingleUrl(url: string) {
       return { success: false, fallback };
     } catch (fallbackError) {
       console.log('❌ Échec du fallback aussi');
-      const errorMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      const errorMessage =
+        fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
       console.log(`🚨 Erreur fallback: ${errorMessage}`);
 
       return { success: false, error: errorMessage };
@@ -108,7 +112,7 @@ export async function quickTest(url?: string) {
   if (result.success) {
     console.log('\n🎉 Test rapide réussi! Le service fonctionne.');
   } else if (result.fallback) {
-    console.log('\n⚠️ L\'API a échoué mais le fallback fonctionne.');
+    console.log("\n⚠️ L'API a échoué mais le fallback fonctionne.");
   } else {
     console.log('\n❌ Le service ne fonctionne pas correctement.');
   }

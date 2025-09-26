@@ -53,10 +53,7 @@ export const AnimatedMomentItem: React.FC<AnimatedMomentItemProps> = ({
         styles.container,
         {
           opacity: fadeAnim,
-          transform: [
-            { translateY: slideAnim },
-            { scale: scaleAnim },
-          ],
+          transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
         },
       ]}
     >

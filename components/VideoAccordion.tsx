@@ -91,9 +91,10 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
   const EMPTY_STATE_HEIGHT = 80; // Height when no moments
   const CONTAINER_PADDING = 24; // Container top/bottom padding
 
-  const maxHeight = video.moments.length === 0
-    ? EMPTY_STATE_HEIGHT + CONTAINER_PADDING
-    : Math.min(320, video.moments.length * MOMENT_HEIGHT + CONTAINER_PADDING);
+  const maxHeight =
+    video.moments.length === 0
+      ? EMPTY_STATE_HEIGHT + CONTAINER_PADDING
+      : Math.min(320, video.moments.length * MOMENT_HEIGHT + CONTAINER_PADDING);
 
   const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
@@ -126,7 +127,8 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
           )}
           <View style={styles.videoMetaContainer}>
             <Text style={styles.videoMeta}>
-              {video.moments.length} moment{video.moments.length > 1 ? 's' : ''} • {formatDate(video.addedAt)}
+              {video.moments.length} moment{video.moments.length > 1 ? 's' : ''} •{' '}
+              {formatDate(video.addedAt)}
             </Text>
           </View>
         </View>
@@ -144,11 +146,7 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
           )}
 
           <Animated.View style={{ transform: [{ rotate: rotateIcon }] }}>
-            <Ionicons
-              name="chevron-down"
-              size={20}
-              color={Colors.text.secondary}
-            />
+            <Ionicons name="chevron-down" size={20} color={Colors.text.secondary} />
           </Animated.View>
         </View>
       </TouchableOpacity>

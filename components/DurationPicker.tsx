@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -63,27 +57,22 @@ export const DurationPicker: React.FC<DurationPickerProps> = ({
           </Text>
 
           <View style={styles.optionsContainer}>
-            {DURATION_OPTIONS.map((option) => (
+            {DURATION_OPTIONS.map(option => (
               <TouchableOpacity
                 key={option.value}
-                style={[
-                  styles.option,
-                  selectedDuration === option.value && styles.optionSelected,
-                ]}
+                style={[styles.option, selectedDuration === option.value && styles.optionSelected]}
                 onPress={() => handleSelect(option.value)}
               >
-                <Text style={[
-                  styles.optionText,
-                  selectedDuration === option.value && styles.optionTextSelected,
-                ]}>
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedDuration === option.value && styles.optionTextSelected,
+                  ]}
+                >
                   {option.label}
                 </Text>
                 {selectedDuration === option.value && (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={Colors.primary}
-                  />
+                  <Ionicons name="checkmark" size={20} color={Colors.primary} />
                 )}
               </TouchableOpacity>
             ))}

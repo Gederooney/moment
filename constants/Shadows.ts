@@ -294,25 +294,26 @@ export const createShadow = (
   offsetY = 2,
   shadowRadius = 4,
   shadowOpacity = 1,
-  elevation = 4,
-) => Platform.select({
-  ios: {
-    shadowColor: color,
-    shadowOffset: { width: 0, height: offsetY },
-    shadowOpacity,
-    shadowRadius,
-  },
-  android: {
-    elevation,
-  },
-  default: {
-    shadowColor: color,
-    shadowOffset: { width: 0, height: offsetY },
-    shadowOpacity,
-    shadowRadius,
-    elevation,
-  },
-}) as ViewStyle;
+  elevation = 4
+) =>
+  Platform.select({
+    ios: {
+      shadowColor: color,
+      shadowOffset: { width: 0, height: offsetY },
+      shadowOpacity,
+      shadowRadius,
+    },
+    android: {
+      elevation,
+    },
+    default: {
+      shadowColor: color,
+      shadowOffset: { width: 0, height: offsetY },
+      shadowOpacity,
+      shadowRadius,
+      elevation,
+    },
+  }) as ViewStyle;
 
 // Utility to get shadow based on theme
 export const getShadow = (shadowName: keyof typeof Shadows, isDark = false) => {
@@ -324,6 +325,6 @@ export const getShadow = (shadowName: keyof typeof Shadows, isDark = false) => {
   return {
     ...baseShadow,
     shadowColor: 'rgba(0, 0, 0, 0.4)',
-    shadowOpacity: Platform.OS === 'ios' ? 1 : (baseShadow.shadowOpacity || 1),
+    shadowOpacity: Platform.OS === 'ios' ? 1 : baseShadow.shadowOpacity || 1,
   };
 };

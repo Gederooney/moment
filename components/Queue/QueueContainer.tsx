@@ -4,11 +4,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
 
 interface QueueContainerProps {
   children: React.ReactNode;
@@ -16,26 +12,21 @@ interface QueueContainerProps {
   style?: ViewStyle;
 }
 
-export const QueueContainer: React.FC<QueueContainerProps> = ({
-  children,
-  style,
-}) => {
-  return (
-    <View style={[styles.container, style]}>
-      {children}
-    </View>
-  );
+export const QueueContainer: React.FC<QueueContainerProps> = ({ children, style }) => {
+  return <View style={[styles.container, style]}>{children}</View>;
 };
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
-    marginHorizontal: 16,
+    marginHorizontal: 8,
+    marginBottom: 4,
     alignSelf: 'center',
     maxWidth: '95%',
   },

@@ -154,9 +154,7 @@ export const Card: React.FC<CardProps> = ({
         accessibilityRole={accessibilityRole || 'button'}
         accessibilityState={{ disabled }}
       >
-        <View style={contentStyle}>
-          {children}
-        </View>
+        <View style={contentStyle}>{children}</View>
       </TouchableOpacity>
     );
   }
@@ -169,9 +167,7 @@ export const Card: React.FC<CardProps> = ({
       accessibilityHint={accessibilityHint}
       accessibilityRole={accessibilityRole}
     >
-      <View style={contentStyle}>
-        {children}
-      </View>
+      <View style={contentStyle}>{children}</View>
     </View>
   );
 };
@@ -179,22 +175,21 @@ export const Card: React.FC<CardProps> = ({
 // Specialized card components
 
 // Header card for important information
-export const HeaderCard: React.FC<Omit<CardProps, 'variant'>> = (props) => (
+export const HeaderCard: React.FC<Omit<CardProps, 'variant'>> = props => (
   <Card {...props} variant="elevated" />
 );
 
 // Action card for interactive elements
-export const ActionCard: React.FC<Omit<CardProps, 'variant'>> = (props) => (
+export const ActionCard: React.FC<Omit<CardProps, 'variant'>> = props => (
   <Card {...props} variant="default" />
 );
 
 // Info card for displaying information
-export const InfoCard: React.FC<Omit<CardProps, 'variant'>> = (props) => (
+export const InfoCard: React.FC<Omit<CardProps, 'variant'>> = props => (
   <Card {...props} variant="outlined" />
 );
 
 // Content card for main content areas
-export const ContentCard: React.FC<Omit<CardProps, 'variant'>> = (props) => (
+export const ContentCard: React.FC<Omit<CardProps, 'variant'>> = props => (
   <Card {...props} variant="filled" />
 );
-

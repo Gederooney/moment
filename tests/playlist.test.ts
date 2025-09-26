@@ -25,7 +25,10 @@ const createTestPlaylist = (): Playlist => ({
   },
 });
 
-const createTestVideo = (title: string, videoId: string): Omit<PlaylistVideo, 'id' | 'order' | 'addedAt'> => ({
+const createTestVideo = (
+  title: string,
+  videoId: string
+): Omit<PlaylistVideo, 'id' | 'order' | 'addedAt'> => ({
   videoId,
   title,
   author: 'Test Author',

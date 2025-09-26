@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -32,12 +26,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onCancel,
 }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.container}>
@@ -53,10 +42,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <Text style={styles.message}>{message}</Text>
 
             <View style={styles.buttons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={onCancel}
-              >
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onCancel}>
                 <Text style={styles.cancelButtonText}>{cancelText}</Text>
               </TouchableOpacity>
 
@@ -69,10 +55,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 onPress={onConfirm}
               >
                 <Text
-                  style={[
-                    styles.confirmButtonText,
-                    destructive && styles.destructiveButtonText,
-                  ]}
+                  style={[styles.confirmButtonText, destructive && styles.destructiveButtonText]}
                 >
                   {confirmText}
                 </Text>

@@ -1,8 +1,6 @@
 export const Config = {
   // API Configuration
-  API_BASE_URL: __DEV__
-    ? 'http://localhost:3000/api'
-    : 'https://your-production-api.com/api',
+  API_BASE_URL: __DEV__ ? 'http://localhost:3000/api' : 'https://your-production-api.com/api',
 
   // YouTube URL patterns
   YOUTUBE_URL_PATTERNS: [
