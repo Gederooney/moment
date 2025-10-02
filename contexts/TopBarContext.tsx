@@ -55,7 +55,6 @@ export function TopBarProvider({ children }: TopBarProviderProps) {
     setState(prev => ({
       ...prev,
       currentVideoId: undefined,
-      title: 'Moments',
     }));
   }, []);
 

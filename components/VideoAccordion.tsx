@@ -109,7 +109,12 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
   return (
     <View style={styles.container}>
       {/* Video Header */}
-      <TouchableOpacity style={styles.header} onPress={onToggleExpand}>
+      <TouchableOpacity
+        style={styles.header}
+        onPress={onToggleExpand}
+        onLongPress={video.moments.length > 0 ? handleDeleteAllMoments : undefined}
+        delayLongPress={500}
+      >
         <Image
           source={{ uri: video.thumbnailFromApi || video.thumbnail }}
           style={styles.thumbnail}
@@ -134,17 +139,6 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
         </View>
 
         <View style={styles.headerActions}>
-          {video.moments.length > 0 && (
-            <TouchableOpacity
-              style={styles.deleteAllButton}
-              onPress={handleDeleteAllMoments}
-              accessibilityLabel="Supprimer tous les moments"
-              accessibilityHint="Supprimer tous les moments de cette vidéo"
-            >
-              <Ionicons name="trash-outline" size={16} color={Colors.error} />
-            </TouchableOpacity>
-          )}
-
           <Animated.View style={{ transform: [{ rotate: rotateIcon }] }}>
             <Ionicons name="chevron-down" size={20} color={Colors.text.secondary} />
           </Animated.View>

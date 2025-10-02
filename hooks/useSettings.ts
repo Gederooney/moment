@@ -6,6 +6,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Sharing from 'expo-sharing';
 import { StorageService } from '../services/storageService';
 import { useVideoHistory } from './useVideoHistory';
+import { Logger } from '../services/logger/Logger';
 
 const SETTINGS_STORAGE_KEY = '@podcut_settings';
 
@@ -56,6 +57,8 @@ export const useSettings = () => {
         setSettings({ ...DEFAULT_SETTINGS, ...parsed });
       }
     } catch (error) {
+      Logger.error('useSettings.loadSettings', error instanceof Error ? error : 'Failed to load settings');
+      setSettings(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
     }
@@ -69,40 +72,40 @@ export const useSettings = () => {
         setSettings(updatedSettings);
         await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
       } catch (error) {
+        Logger.error('useSettings.saveSettings', error instanceof Error ? error : 'Failed to save settings', { newSettings });
+        throw error;
       }
     },
     [settings]
   );
 
-  // Calculate storage statistics
+  /**
+   * Get directory size safely
+   */
+  const getDirectorySize = async (directory: string | undefined, dirName: string): Promise<number> => {
+    if (!directory) return 0;
+
+    try {
+      const dirInfo = await (FileSystem as any).getInfoAsync(directory);
+      if (dirInfo.exists) {
+        return (dirInfo as any).size || 0;
+      }
+    } catch (error) {
+      Logger.warn('useSettings.calculateStorageStats', `Failed to get ${dirName} size`, error);
+    }
+    return 0;
+  };
+
+  /**
+   * Calculate storage statistics
+   */
   const calculateStorageStats = useCallback(async () => {
     try {
-      let totalSpace = 0;
-      let cacheSize = 0;
-
-      // Calculate app directory size
       const appDir = (FileSystem as any).documentDirectory;
-      if (appDir) {
-        try {
-          const dirInfo = await (FileSystem as any).getInfoAsync(appDir);
-          if (dirInfo.exists) {
-            totalSpace = (dirInfo as any).size || 0;
-          }
-        } catch (error) {
-        }
-      }
-
-      // Calculate cache size
       const cacheDir = (FileSystem as any).cacheDirectory;
-      if (cacheDir) {
-        try {
-          const cacheInfo = await (FileSystem as any).getInfoAsync(cacheDir);
-          if (cacheInfo.exists) {
-            cacheSize = (cacheInfo as any).size || 0;
-          }
-        } catch (error) {
-        }
-      }
+
+      const totalSpace = await getDirectorySize(appDir, 'app directory');
+      const cacheSize = await getDirectorySize(cacheDir, 'cache directory');
 
       setStorageStats({
         totalSpace,
@@ -111,6 +114,7 @@ export const useSettings = () => {
         cacheSize,
       });
     } catch (error) {
+      Logger.error('useSettings.calculateStorageStats', error instanceof Error ? error : 'Failed to calculate storage stats');
     }
   }, [videos, getTotalMomentsCount]);
 
@@ -127,11 +131,13 @@ export const useSettings = () => {
             )
           );
         } catch (error) {
+          Logger.warn('useSettings.clearCache', 'Failed to clear some cache files', error);
         }
       }
       await calculateStorageStats();
       Alert.alert('Succès', 'Le cache a été effacé avec succès.');
     } catch (error) {
+      Logger.error('useSettings.clearCache', error instanceof Error ? error : 'Failed to clear cache');
       Alert.alert('Erreur', "Impossible d'effacer le cache.");
     }
   }, [calculateStorageStats]);
@@ -153,6 +159,7 @@ export const useSettings = () => {
               await calculateStorageStats();
               Alert.alert('Succès', 'Toutes les données ont été effacées.');
             } catch (error) {
+              Logger.error('useSettings.clearAllData', error instanceof Error ? error : 'Failed to clear all data');
               Alert.alert('Erreur', "Impossible d'effacer toutes les données.");
             }
           },
@@ -161,91 +168,129 @@ export const useSettings = () => {
     );
   }, [clearAllHistory, clearCache, calculateStorageStats]);
 
-  // Export moments data
+  /**
+   * Prepare export data structure
+   */
+  const prepareExportData = () => ({
+    exportDate: new Date().toISOString(),
+    version: '1.0.0',
+    videos: videos.map(video => ({
+      id: video.id,
+      title: video.title,
+      url: video.url,
+      thumbnail: video.thumbnail,
+      addedAt: video.addedAt.toISOString(),
+      moments: video.moments.map(moment => ({
+        id: moment.id,
+        timestamp: moment.timestamp,
+        duration: moment.duration,
+        title: moment.title,
+        createdAt: moment.createdAt.toISOString(),
+      })),
+    })),
+    settings,
+  });
+
+  /**
+   * Write export file to filesystem
+   */
+  const writeExportFile = async (exportData: any): Promise<string> => {
+    const fileName = `podcut-export-${new Date().toISOString().split('T')[0]}.json`;
+    const fileUri = `${(FileSystem as any).documentDirectory}${fileName}`;
+    await (FileSystem as any).writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
+    return fileUri;
+  };
+
+  /**
+   * Share or display export file
+   */
+  const shareExportFile = async (fileUri: string): Promise<void> => {
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(fileUri, {
+        mimeType: 'application/json',
+        dialogTitle: 'Exporter les moments Moments',
+      });
+    } else {
+      Alert.alert('Succès', `Export sauvegardé dans: ${fileUri}`);
+    }
+  };
+
+  /**
+   * Export moments data
+   */
   const exportMoments = useCallback(async () => {
     try {
-      const exportData = {
-        exportDate: new Date().toISOString(),
-        version: '1.0.0',
-        videos: videos.map(video => ({
-          id: video.id,
-          title: video.title,
-          url: video.url,
-          thumbnail: video.thumbnail,
-          addedAt: video.addedAt.toISOString(),
-          moments: video.moments.map(moment => ({
-            id: moment.id,
-            timestamp: moment.timestamp,
-            duration: moment.duration,
-            title: moment.title,
-            createdAt: moment.createdAt.toISOString(),
-          })),
-        })),
-        settings,
-      };
-
-      const fileName = `podcut-export-${new Date().toISOString().split('T')[0]}.json`;
-      const fileUri = `${(FileSystem as any).documentDirectory}${fileName}`;
-
-      await (FileSystem as any).writeAsStringAsync(fileUri, JSON.stringify(exportData, null, 2));
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'application/json',
-          dialogTitle: 'Exporter les moments Moments',
-        });
-      } else {
-        Alert.alert('Succès', `Export sauvegardé dans: ${fileUri}`);
-      }
+      const exportData = prepareExportData();
+      const fileUri = await writeExportFile(exportData);
+      await shareExportFile(fileUri);
     } catch (error) {
+      Logger.error('useSettings.exportMoments', error instanceof Error ? error : 'Failed to export moments');
       Alert.alert('Erreur', "Impossible d'exporter les moments.");
     }
   }, [videos, settings]);
 
-  // Import moments data
+  /**
+   * Pick and read import file
+   */
+  const pickImportFile = async (): Promise<any> => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: 'application/json',
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      throw new Error('No file selected');
+    }
+
+    const content = await (FileSystem as any).readAsStringAsync(result.assets[0].uri);
+    return JSON.parse(content);
+  };
+
+  /**
+   * Validate import data structure
+   */
+  const validateImportData = (importData: any): void => {
+    if (!importData.videos || !Array.isArray(importData.videos)) {
+      throw new Error('Format de fichier invalide');
+    }
+  };
+
+  /**
+   * Process import with user confirmation
+   */
+  const processImportWithConfirmation = (importData: any): void => {
+    Alert.alert(
+      'Importer les données',
+      `Importer ${importData.videos.length} vidéo(s) et leurs moments ? Cela remplacera vos données actuelles.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Importer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearAllHistory();
+              Alert.alert('Succès', 'Import en cours de développement...');
+            } catch (error) {
+              Logger.error('useSettings.importMoments.import', error instanceof Error ? error : 'Failed to import data');
+              Alert.alert('Erreur', "Impossible d'importer les données.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  /**
+   * Import moments data
+   */
   const importMoments = useCallback(async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'application/json',
-        copyToCacheDirectory: true,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const file = result.assets[0];
-        const content = await (FileSystem as any).readAsStringAsync(file.uri);
-        const importData = JSON.parse(content);
-
-        // Validate import data structure
-        if (!importData.videos || !Array.isArray(importData.videos)) {
-          throw new Error('Format de fichier invalide');
-        }
-
-        Alert.alert(
-          'Importer les données',
-          `Importer ${importData.videos.length} vidéo(s) et leurs moments ? Cela remplacera vos données actuelles.`,
-          [
-            { text: 'Annuler', style: 'cancel' },
-            {
-              text: 'Importer',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  // Clear existing data
-                  await clearAllHistory();
-
-                  // Import videos and moments
-                  // This would require extending the useVideoHistory hook
-                  // For now, show success message
-                  Alert.alert('Succès', 'Import en cours de développement...');
-                } catch (error) {
-                  Alert.alert('Erreur', "Impossible d'importer les données.");
-                }
-              },
-            },
-          ]
-        );
-      }
+      const importData = await pickImportFile();
+      validateImportData(importData);
+      processImportWithConfirmation(importData);
     } catch (error) {
+      Logger.error('useSettings.importMoments', error instanceof Error ? error : 'Failed to import moments');
       Alert.alert('Erreur', "Fichier invalide ou erreur d'import.");
     }
   }, [clearAllHistory]);

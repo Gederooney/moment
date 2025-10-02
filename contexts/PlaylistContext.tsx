@@ -5,8 +5,12 @@ import React, {
   useState,
   useCallback,
   ReactNode,
+  useRef,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { nanoid } from 'nanoid';
+import debounce from 'lodash.debounce';
+import { Logger } from '../services/logger/Logger';
 
 export interface PlaylistVideo {
   id: string;
@@ -39,12 +43,9 @@ export interface PlaylistState {
 }
 
 interface PlaylistContextType {
-  // State
   playlists: Playlist[];
   currentState: PlaylistState;
   isLoading: boolean;
-
-  // Playlist management
   createPlaylist: (name: string, description?: string) => Promise<Playlist>;
   deletePlaylist: (playlistId: string) => Promise<void>;
   updatePlaylist: (
@@ -57,8 +58,6 @@ interface PlaylistContextType {
   ) => Promise<void>;
   removeVideoFromPlaylist: (playlistId: string, videoId: string) => Promise<void>;
   reorderPlaylistVideos: (playlistId: string, fromIndex: number, toIndex: number) => Promise<void>;
-
-  // Playback control
   setActivePlaylist: (playlistId: string | null) => void;
   playVideoAtIndex: (index: number) => void;
   playNext: () => PlaylistVideo | null;
@@ -66,8 +65,6 @@ interface PlaylistContextType {
   toggleAutoPlay: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
-
-  // Getters
   getCurrentVideo: () => PlaylistVideo | null;
   getNextVideo: () => PlaylistVideo | null;
   getPreviousVideo: () => PlaylistVideo | null;
@@ -83,36 +80,81 @@ const STORAGE_KEYS = {
   CURRENT_STATE: '@podcut_playlist_state',
 };
 
-export function PlaylistProvider({ children }: { children: ReactNode }) {
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [currentState, setCurrentState] = useState<PlaylistState>({
+function createDefaultState(): PlaylistState {
+  return {
     currentPlaylist: null,
     currentVideoIndex: 0,
     isPlaying: false,
     autoPlay: true,
     shuffle: false,
     repeat: false,
-  });
+  };
+}
+
+function restoreCurrentPlaylistState(
+  parsedState: PlaylistState,
+  playlists: Playlist[]
+): PlaylistState {
+  if (!parsedState.currentPlaylist) return parsedState;
+
+  const playlist = playlists.find((p: Playlist) => p.id === parsedState.currentPlaylist?.id);
+  if (playlist) {
+    parsedState.currentPlaylist = playlist;
+  } else {
+    parsedState.currentPlaylist = null;
+    parsedState.currentVideoIndex = 0;
+  }
+  return parsedState;
+}
+
+function removeVideoFromPlaylistVideos(
+  prevPlaylists: Playlist[],
+  playlistId: string,
+  videoId: string
+): Playlist[] {
+  return prevPlaylists.map(playlist =>
+    playlist.id === playlistId
+      ? {
+          ...playlist,
+          videos: playlist.videos.filter(v => v.videoId !== videoId),
+          updatedAt: Date.now(),
+        }
+      : playlist
+  );
+}
+
+function calculateShuffleNextIndex(
+  videos: PlaylistVideo[],
+  currentIndex: number
+): number | null {
+  const availableIndices = videos
+    .map((_, i) => i)
+    .filter(i => i !== currentIndex);
+
+  if (availableIndices.length === 0) return null;
+  return availableIndices[Math.floor(Math.random() * availableIndices.length)];
+}
+
+function calculateNextIndex(
+  currentIndex: number,
+  videosLength: number,
+  shuffle: boolean,
+  repeat: boolean,
+  videos: PlaylistVideo[]
+): number | null {
+  if (shuffle) return calculateShuffleNextIndex(videos, currentIndex);
+
+  const nextIndex = currentIndex + 1;
+  if (nextIndex >= videosLength) {
+    return repeat ? 0 : null;
+  }
+  return nextIndex;
+}
+
+export function PlaylistProvider({ children }: { children: ReactNode }) {
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [currentState, setCurrentState] = useState<PlaylistState>(createDefaultState());
   const [isLoading, setIsLoading] = useState(true);
-
-  // Load data from storage
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  // Save playlists to storage whenever they change
-  useEffect(() => {
-    if (!isLoading) {
-      savePlaylists();
-    }
-  }, [playlists, isLoading]);
-
-  // Save current state to storage whenever it changes
-  useEffect(() => {
-    if (!isLoading) {
-      saveCurrentState();
-    }
-  }, [currentState, isLoading]);
 
   const loadData = async () => {
     try {
@@ -121,57 +163,71 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
         AsyncStorage.getItem(STORAGE_KEYS.CURRENT_STATE),
       ]);
 
-      let parsedPlaylists: Playlist[] = [];
-      if (playlistsData) {
-        parsedPlaylists = JSON.parse(playlistsData);
-        setPlaylists(parsedPlaylists);
-      }
+      const parsedPlaylists = playlistsData ? JSON.parse(playlistsData) : [];
+      setPlaylists(parsedPlaylists);
 
       if (stateData) {
         const parsedState = JSON.parse(stateData);
-        // Find the current playlist in loaded playlists
-        if (parsedState.currentPlaylist) {
-          const playlist = parsedPlaylists?.find(
-            (p: Playlist) => p.id === parsedState.currentPlaylist.id
-          );
-          if (playlist) {
-            parsedState.currentPlaylist = playlist;
-          } else {
-            parsedState.currentPlaylist = null;
-            parsedState.currentVideoIndex = 0;
-          }
-        }
-        setCurrentState(parsedState);
+        const restoredState = restoreCurrentPlaylistState(parsedState, parsedPlaylists);
+        setCurrentState(restoredState);
       }
     } catch (error) {
-      console.error('Error loading playlist data:', error);
+      Logger.error('PlaylistContext.loadData', error instanceof Error ? error : 'Failed to load playlist data');
+      setPlaylists([]);
+      setCurrentState(createDefaultState());
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const debouncedSavePlaylists = useRef(
+    debounce(async (playlistsToSave: Playlist[]) => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlistsToSave));
+      } catch (error) {
+        Logger.error('PlaylistContext.savePlaylists', error instanceof Error ? error : 'Failed to save playlists');
+      }
+    }, 500)
+  ).current;
+
+  const debouncedSaveCurrentState = useRef(
+    debounce(async (stateToSave: PlaylistState) => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_STATE, JSON.stringify(stateToSave));
+      } catch (error) {
+        Logger.error('PlaylistContext.saveCurrentState', error instanceof Error ? error : 'Failed to save current state');
+      }
+    }, 500)
+  ).current;
+
   const savePlaylists = async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.PLAYLISTS, JSON.stringify(playlists));
-    } catch (error) {
-      console.error('Error saving playlists:', error);
-    }
+    debouncedSavePlaylists(playlists);
   };
 
   const saveCurrentState = async () => {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_STATE, JSON.stringify(currentState));
-    } catch (error) {
-      console.error('Error saving current state:', error);
-    }
+    debouncedSaveCurrentState(currentState);
   };
 
-  const generateId = () => `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  useEffect(() => {
+    if (!isLoading) {
+      savePlaylists();
+    }
+  }, [playlists, isLoading]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      saveCurrentState();
+    }
+  }, [currentState, isLoading]);
 
   const createPlaylist = useCallback(
     async (name: string, description?: string): Promise<Playlist> => {
       const playlist: Playlist = {
-        id: generateId(),
+        id: nanoid(),
         name,
         description,
         videos: [],
@@ -188,7 +244,6 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
   const deletePlaylist = useCallback(async (playlistId: string): Promise<void> => {
     setPlaylists(prev => prev.filter(p => p.id !== playlistId));
 
-    // Clear current playlist if it's the one being deleted
     setCurrentState(prev => {
       if (prev.currentPlaylist?.id === playlistId) {
         return {
@@ -219,7 +274,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     async (playlistId: string, video: Omit<PlaylistVideo, 'id' | 'addedAt'>): Promise<void> => {
       const newVideo: PlaylistVideo = {
         ...video,
-        id: generateId(),
+        id: nanoid(),
         addedAt: Date.now(),
       };
 
@@ -238,36 +293,29 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const adjustVideoIndexAfterRemoval = (
+    prevState: PlaylistState,
+    playlistId: string,
+    videoId: string
+  ): PlaylistState => {
+    if (prevState.currentPlaylist?.id !== playlistId) return prevState;
+
+    const playlist = playlists.find(p => p.id === playlistId);
+    if (!playlist) return prevState;
+
+    const videoIndex = playlist.videos.findIndex(v => v.videoId === videoId);
+    if (videoIndex === -1 || videoIndex > prevState.currentVideoIndex) return prevState;
+
+    return {
+      ...prevState,
+      currentVideoIndex: Math.max(0, prevState.currentVideoIndex - 1),
+    };
+  };
+
   const removeVideoFromPlaylist = useCallback(
     async (playlistId: string, videoId: string): Promise<void> => {
-      setPlaylists(prev =>
-        prev.map(playlist =>
-          playlist.id === playlistId
-            ? {
-                ...playlist,
-                videos: playlist.videos.filter(v => v.videoId !== videoId),
-                updatedAt: Date.now(),
-              }
-            : playlist
-        )
-      );
-
-      // Adjust current video index if needed
-      setCurrentState(prev => {
-        if (prev.currentPlaylist?.id === playlistId) {
-          const playlist = playlists.find(p => p.id === playlistId);
-          if (playlist) {
-            const videoIndex = playlist.videos.findIndex(v => v.videoId === videoId);
-            if (videoIndex !== -1 && videoIndex <= prev.currentVideoIndex) {
-              return {
-                ...prev,
-                currentVideoIndex: Math.max(0, prev.currentVideoIndex - 1),
-              };
-            }
-          }
-        }
-        return prev;
-      });
+      setPlaylists(prev => removeVideoFromPlaylistVideos(prev, playlistId, videoId));
+      setCurrentState(prev => adjustVideoIndexAfterRemoval(prev, playlistId, videoId));
     },
     [playlists]
   );
@@ -325,25 +373,15 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     if (!currentState.currentPlaylist) return null;
 
     const { videos } = currentState.currentPlaylist;
-    let nextIndex = currentState.currentVideoIndex + 1;
+    const nextIndex = calculateNextIndex(
+      currentState.currentVideoIndex,
+      videos.length,
+      currentState.shuffle,
+      currentState.repeat,
+      videos
+    );
 
-    if (currentState.shuffle) {
-      // Simple shuffle: random video excluding current
-      const availableIndices = videos
-        .map((_, i) => i)
-        .filter(i => i !== currentState.currentVideoIndex);
-      if (availableIndices.length > 0) {
-        nextIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
-      } else {
-        return null;
-      }
-    } else if (nextIndex >= videos.length) {
-      if (currentState.repeat) {
-        nextIndex = 0;
-      } else {
-        return null;
-      }
-    }
+    if (nextIndex === null) return null;
 
     const nextVideo = videos[nextIndex];
     if (nextVideo) {

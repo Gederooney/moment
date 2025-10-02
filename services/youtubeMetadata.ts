@@ -24,53 +24,67 @@ interface CachedMetadata extends YouTubeMetadata {
 const METADATA_CACHE_KEY = 'youtube_metadata_cache';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 heures
 
+function buildOembedUrl(url: string): string {
+  return `https://youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+}
+
+function createAbortController(timeoutMs: number): {
+  controller: AbortController;
+  timeoutId: NodeJS.Timeout;
+} {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  return { controller, timeoutId };
+}
+
+function validateMetadata(metadata: YouTubeMetadata): void {
+  if (!metadata.title || !metadata.author_name) {
+    throw new Error('Invalid metadata received from YouTube oEmbed API');
+  }
+}
+
+async function fetchFromOembedApi(url: string): Promise<YouTubeMetadata> {
+  const oembedUrl = buildOembedUrl(url);
+  const { controller, timeoutId } = createAbortController(10000);
+
+  try {
+    const response = await fetch(oembedUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'PodCut/1.0',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
+    }
+
+    const metadata: YouTubeMetadata = await response.json();
+    validateMetadata(metadata);
+    return metadata;
+  } catch (fetchError) {
+    clearTimeout(timeoutId);
+    throw fetchError;
+  }
+}
+
 /**
  * Récupère les métadonnées YouTube via l'API oEmbed
  */
 export async function fetchYouTubeMetadata(url: string): Promise<YouTubeMetadata> {
   try {
-    // Vérifier le cache d'abord
     const cachedData = await getCachedMetadata(url);
     if (cachedData) {
       return cachedData;
     }
 
-    const oembedUrl = `https://youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
-
-    try {
-      const response = await fetch(oembedUrl, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'PodCut/1.0',
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch metadata: ${response.status} ${response.statusText}`);
-      }
-
-      const metadata: YouTubeMetadata = await response.json();
-
-      // Valider les données reçues
-      if (!metadata.title || !metadata.author_name) {
-        throw new Error('Invalid metadata received from YouTube oEmbed API');
-      }
-
-      // Mettre en cache les métadonnées
-      await cacheMetadata(url, metadata);
-
-      return metadata;
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      throw fetchError;
-    }
+    const metadata = await fetchFromOembedApi(url);
+    await cacheMetadata(url, metadata);
+    return metadata;
   } catch (error) {
     throw error;
   }
@@ -89,10 +103,8 @@ async function getCachedMetadata(url: string): Promise<YouTubeMetadata | null> {
 
     if (!cached) return null;
 
-    // Vérifier si le cache est encore valide
     const now = Date.now();
     if (now - cached.cached_at > CACHE_DURATION) {
-      // Cache expiré, le supprimer
       delete cache[url];
       await AsyncStorage.setItem(METADATA_CACHE_KEY, JSON.stringify(cache));
       return null;
@@ -157,7 +169,6 @@ export function generateFallbackTitle(url: string, videoId?: string): string {
     return `Vidéo YouTube ${videoId}`;
   }
 
-  // Essayer d'extraire quelque chose d'utile de l'URL
   try {
     const urlObj = new URL(url);
     if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
@@ -191,7 +202,6 @@ export async function fetchYouTubeMetadataWithFallback(
       isFromApi: true,
     };
   } catch (error) {
-    // Utiliser les données de fallback
     return {
       title: generateFallbackTitle(url, videoId),
       author_name: 'Auteur inconnu',

@@ -1,49 +1,69 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../constants/Colors';
 import { useSettings } from '../../hooks/useSettings';
 import { useTopBarContext } from '../../contexts/TopBarContext';
-import { useAuthContext } from '../../contexts/AuthContext';
+import { useMomentsContext } from '../../contexts/MomentsContext';
 import { SettingSection } from '../../components/SettingSection';
 import { SettingItem } from '../../components/SettingItem';
-import { Button } from '../../components/Button';
 import { DurationPicker } from '../../components/DurationPicker';
 import { formatDuration } from '../../utils/storage';
+import { SpotifyIcon } from '../../components/icons/SpotifyIcon';
+import { AppleMusicIcon } from '../../components/icons/AppleMusicIcon';
 
 export default function SettingsScreen() {
   const { settings, isLoading, updateSetting } = useSettings();
-
-  // Contexte TopBar pour mettre à jour le titre
-  const { setTitle } = useTopBarContext();
-
-  // Auth context
-  const { isAuthenticated, user, logout } = useAuthContext();
-
-  // Router for navigation
-  const router = useRouter();
-
-  // Mise à jour du titre TopBar
-  React.useEffect(() => {
-    setTitle('Profil');
-  }, [setTitle]);
+  const { setTitle, clearVideoState } = useTopBarContext();
+  const { clearAllHistory, refreshMoments } = useMomentsContext();
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
 
-  const handleLogin = () => {
-    router.push('/(auth)/login');
-  };
+  useFocusEffect(
+    useCallback(() => {
+      clearVideoState();
+      setTitle('Paramètres');
+    }, [setTitle, clearVideoState])
+  );
 
-  const handleRegister = () => {
-    router.push('/(auth)/register');
-  };
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const buildNumber = '1';
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-    }
+  const handleClearCache = () => {
+    Alert.alert(
+      'Effacer le cache',
+      'Tous vos moments seront perdus. Cette action est irréversible. Votre file de lecture sera préservée.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Effacer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Sauvegarder la playlist avant de tout effacer
+              const playlist = await AsyncStorage.getItem('@podcut_simple_playlist');
+
+              // Effacer tout le cache
+              await AsyncStorage.clear();
+
+              // Restaurer la playlist
+              if (playlist) {
+                await AsyncStorage.setItem('@podcut_simple_playlist', playlist);
+              }
+
+              await clearAllHistory();
+              await refreshMoments();
+              Alert.alert('Succès', 'Cache effacé avec succès. Votre file de lecture est préservée.');
+            } catch (error) {
+              Alert.alert('Erreur', "Impossible d'effacer le cache");
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (isLoading) {
@@ -58,58 +78,35 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Ionicons name="person" size={40} color={Colors.primary} />
-          <Text style={styles.title}>Profil</Text>
-        </View>
-
-        {/* Section Compte */}
-        <SettingSection title="Compte">
-          {isAuthenticated ? (
-            <>
-              <SettingItem
-                icon="person-outline"
-                title={user?.name || 'Utilisateur'}
-                subtitle={user?.email}
-                type="info"
-              />
-              <View style={styles.buttonContainer}>
-                <Button
-                  title="Se déconnecter"
-                  variant="outline"
-                  icon="log-out-outline"
-                  onPress={handleLogout}
-                  fullWidth
-                />
-              </View>
-            </>
-          ) : (
-            <View style={styles.authButtons}>
-              <View style={styles.buttonContainer}>
-                <Button
-                  title="Se connecter"
-                  variant="primary"
-                  icon="log-in-outline"
-                  onPress={handleLogin}
-                  fullWidth
-                />
-              </View>
-              <View style={styles.buttonContainer}>
-                <Button
-                  title="Créer un compte"
-                  variant="outline"
-                  icon="person-add-outline"
-                  onPress={handleRegister}
-                  fullWidth
-                />
-              </View>
-            </View>
-          )}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <SettingSection title="Comptes connectés">
+          <SettingItem
+            icon={<SpotifyIcon size={20} color={Colors.text.secondary} />}
+            title="Spotify"
+            subtitle="Connecter votre compte Spotify"
+            type="action"
+            onPress={() => Alert.alert('Spotify', 'Connexion à venir')}
+          />
+          <SettingItem
+            icon={<AppleMusicIcon size={20} color={Colors.text.secondary} />}
+            title="Apple Music"
+            subtitle="Connecter votre compte Apple Music"
+            type="action"
+            onPress={() => Alert.alert('Apple Music', 'Connexion à venir')}
+          />
+          <SettingItem
+            icon="cloud"
+            title="SoundCloud"
+            subtitle="Connecter votre compte SoundCloud"
+            type="action"
+            onPress={() => Alert.alert('SoundCloud', 'Connexion à venir')}
+          />
         </SettingSection>
 
-        {/* Configuration des moments */}
         <SettingSection title="Configuration des moments">
           <SettingItem
             icon="time-outline"
@@ -120,9 +117,28 @@ export default function SettingsScreen() {
             onPress={() => setShowDurationPicker(true)}
           />
         </SettingSection>
+
+        <SettingSection title="À propos">
+          <SettingItem
+            icon="information-circle-outline"
+            title="Version"
+            subtitle={`${appVersion} (${buildNumber})`}
+            type="info"
+          />
+        </SettingSection>
+
+        <SettingSection title="Données">
+          <SettingItem
+            icon="trash-outline"
+            title="Effacer le cache"
+            subtitle="Supprimer tous vos moments"
+            type="action"
+            onPress={handleClearCache}
+            isDestructive
+          />
+        </SettingSection>
       </ScrollView>
 
-      {/* Duration Picker */}
       <DurationPicker
         selectedDuration={settings.momentDuration}
         onSelect={duration => updateSetting({ momentDuration: duration })}
@@ -140,6 +156,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -161,12 +180,5 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.text.primary,
     marginTop: 8,
-  },
-  authButtons: {
-    gap: 12,
-  },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
   },
 });

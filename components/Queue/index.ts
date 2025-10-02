@@ -5,7 +5,6 @@
 
 // Main components
 export { QueueContainer } from './QueueContainer';
-export { QueueHeader } from './QueueHeader';
 export { QueueList } from './QueueList';
 export { QueueItem, type QueueVideoItem } from './QueueItem';
 export { AddVideoModal } from './AddVideoModal';

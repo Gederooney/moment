@@ -11,6 +11,80 @@ export interface UseVideoProcessorResult {
   reset: () => void;
 }
 
+function validateYouTubeUrl(url: string): void {
+  if (!YouTubeService.isValidYouTubeUrl(url)) {
+    throw new Error('URL YouTube invalide');
+  }
+}
+
+async function fetchVideoInfo(url: string): Promise<VideoInfo> {
+  return await YouTubeService.getVideoInfo(url);
+}
+
+async function startVideoProcessing(url: string): Promise<ProcessingResult> {
+  return await YouTubeService.processVideo(url);
+}
+
+function createHistoryItem(
+  jobId: string,
+  info: VideoInfo,
+  url: string,
+  audioUrl: string
+): DownloadHistory {
+  return {
+    id: jobId,
+    title: info.title,
+    originalUrl: url,
+    audioUrl: audioUrl,
+    thumbnail: info.thumbnail,
+    downloadDate: new Date().toISOString(),
+    duration: info.duration,
+    author: info.author,
+  };
+}
+
+async function handleCompletedJob(
+  result: ProcessingResult,
+  info: VideoInfo,
+  url: string
+): Promise<void> {
+  if (result.status === 'completed' && result.audioUrl) {
+    const historyItem = createHistoryItem(result.jobId, info, url, result.audioUrl);
+    await StorageService.addToHistory(historyItem);
+  }
+}
+
+function createPollJobFunction(
+  jobId: string,
+  info: VideoInfo,
+  url: string,
+  setProcessingResult: (result: ProcessingResult) => void,
+  setError: (error: string | null) => void
+) {
+  return async () => {
+    try {
+      const finalResult = await YouTubeService.checkJobStatus(jobId);
+      setProcessingResult(finalResult);
+      await handleCompletedJob(finalResult, info, url);
+    } catch (pollError) {
+      setError('Erreur lors du traitement de la vidéo');
+    }
+  };
+}
+
+function schedulePollIfPending(
+  result: ProcessingResult,
+  info: VideoInfo,
+  url: string,
+  setProcessingResult: (result: ProcessingResult) => void,
+  setError: (error: string | null) => void
+): void {
+  if (result.status === 'pending') {
+    const pollJob = createPollJobFunction(result.jobId, info, url, setProcessingResult, setError);
+    setTimeout(pollJob, 3000);
+  }
+}
+
 export function useVideoProcessor(): UseVideoProcessorResult {
   const [isLoading, setIsLoading] = useState(false);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
@@ -24,46 +98,14 @@ export function useVideoProcessor(): UseVideoProcessorResult {
       setVideoInfo(null);
       setProcessingResult(null);
 
-      // Validate URL
-      if (!YouTubeService.isValidYouTubeUrl(url)) {
-        throw new Error('URL YouTube invalide');
-      }
-
-      // Get video info
-      const info = await YouTubeService.getVideoInfo(url);
+      validateYouTubeUrl(url);
+      const info = await fetchVideoInfo(url);
       setVideoInfo(info);
 
-      // Start processing
-      const result = await YouTubeService.processVideo(url);
+      const result = await startVideoProcessing(url);
       setProcessingResult(result);
 
-      // Poll for completion (simplified for demo)
-      if (result.status === 'pending') {
-        setTimeout(async () => {
-          try {
-            const finalResult = await YouTubeService.checkJobStatus(result.jobId);
-            setProcessingResult(finalResult);
-
-            // Add to history if completed
-            if (finalResult.status === 'completed' && finalResult.audioUrl) {
-              const historyItem: DownloadHistory = {
-                id: result.jobId,
-                title: info.title,
-                originalUrl: url,
-                audioUrl: finalResult.audioUrl,
-                thumbnail: info.thumbnail,
-                downloadDate: new Date().toISOString(),
-                duration: info.duration,
-                author: info.author,
-              };
-
-              await StorageService.addToHistory(historyItem);
-            }
-          } catch (pollError) {
-            setError('Erreur lors du traitement de la vidéo');
-          }
-        }, 3000);
-      }
+      schedulePollIfPending(result, info, url, setProcessingResult, setError);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue');
     } finally {

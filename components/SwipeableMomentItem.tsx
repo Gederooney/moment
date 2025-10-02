@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { CapturedMoment } from '../types/moment';
 import { SwipeableItem } from './SwipeableItem';
 import { formatDuration } from '../utils/time';
+import { MomentEditModal } from './moments/MomentEditModal';
+import { useMomentsContext } from '../contexts/MomentsContext';
 
 interface SwipeableMomentItemProps {
   moment: CapturedMoment;
@@ -13,71 +15,107 @@ interface SwipeableMomentItemProps {
   showNewBadge?: boolean;
 }
 
+const formatTime = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+};
+
+const formatDateTime = (date: Date) => {
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
 export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
   moment,
   onPlay,
   onDelete,
   showNewBadge = false,
 }) => {
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  const { updateMoment } = useMomentsContext();
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Supprimer ce moment',
+      'Êtes-vous sûr de vouloir supprimer ce moment ?',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel'
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: onDelete
+        }
+      ]
+    );
   };
 
-  const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+  const handleLongPress = () => {
+    setShowEditModal(true);
   };
+
+  const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
+    updateMoment(momentId, updates);
+  };
+
+  const getThumbnailUrl = (videoId: string) => {
+    return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  };
+
+  const thumbnailUrl = getThumbnailUrl(moment.videoId);
 
   return (
-    <SwipeableItem
-      onDelete={onDelete}
-      deleteConfirmTitle="Supprimer le moment"
-      deleteConfirmMessage="Êtes-vous sûr de vouloir supprimer ce moment ?"
-      containerStyle={styles.swipeableContainer}
-      showArchiveAction={false}
-    >
-      <TouchableOpacity
-        style={styles.container}
-        onPress={onPlay}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel={`Lire le moment à ${formatTime(moment.timestamp)}`}
-        accessibilityHint="Appuyez pour lire ce moment, ou balayez vers la gauche pour supprimer"
+    <>
+      <SwipeableItem
+        onDelete={handleDelete}
+        deleteConfirmTitle=""
+        deleteConfirmMessage=""
+        containerStyle={styles.swipeableContainer}
+        showArchiveAction={false}
       >
-        <View style={styles.content}>
-          <TouchableOpacity style={styles.playButton} onPress={onPlay}>
-            <Ionicons name="play" size={16} color={Colors.primary} />
-          </TouchableOpacity>
-
-          <View style={styles.momentInfo}>
-            <View style={styles.momentTitleRow}>
-              <Text style={styles.momentTitle}>Moment à {formatTime(moment.timestamp)}</Text>
-              {showNewBadge && (
-                <View style={styles.newBadge}>
-                  <Text style={styles.newBadgeText}>Nouveau!</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.momentMeta}>Capturé le {formatDateTime(moment.createdAt)}</Text>
+        <TouchableOpacity
+          style={styles.container}
+          onPress={onPlay}
+          onLongPress={handleLongPress}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={`Lire le moment à ${formatTime(moment.timestamp)}`}
+          accessibilityHint="Appuyez pour lire ce moment, maintenez pour éditer, ou balayez pour supprimer"
+        >
+          {/* Thumbnail 72x72 - Wireframe 3 */}
+          <View style={styles.thumbnail}>
+            <Image
+              source={{ uri: thumbnailUrl }}
+              style={styles.thumbnailImage}
+              resizeMode="cover"
+            />
           </View>
 
-          <View style={styles.duration}>
-            <Text style={styles.durationText}>{formatDuration(moment.duration)}</Text>
+          <View style={styles.content}>
+            <Text style={styles.momentTitle} numberOfLines={1}>
+              {moment.title}
+            </Text>
+            <Text style={styles.momentMeta}>
+              à {formatTime(moment.timestamp)} min
+            </Text>
           </View>
+        </TouchableOpacity>
+      </SwipeableItem>
 
-          {/* Swipe hint indicator */}
-          <View style={styles.swipeHint}>
-            <Ionicons name="swap-horizontal" size={14} color={Colors.text.tertiary} />
-          </View>
-        </View>
-      </TouchableOpacity>
-    </SwipeableItem>
+      <MomentEditModal
+        moment={moment}
+        visible={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveEdit}
+      />
+    </>
   );
 };
 
@@ -86,30 +124,28 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   container: {
-    backgroundColor: Colors.background.white,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.border.light,
-    overflow: 'hidden',
-  },
-  content: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    gap: 12,
+    backgroundColor: 'transparent',
   },
-  playButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.background.primary,
-    alignItems: 'center',
+  thumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: Colors.background.tertiary,
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  content: {
+    flex: 1,
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
   momentInfo: {
     flex: 1,
-    marginLeft: 12,
   },
   momentTitleRow: {
     flexDirection: 'row',
@@ -117,13 +153,13 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   momentTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: Colors.text.primary,
-    flex: 1,
+    marginBottom: 2,
   },
   momentMeta: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.text.secondary,
   },
   duration: {

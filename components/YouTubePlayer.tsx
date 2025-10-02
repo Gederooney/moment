@@ -22,6 +22,63 @@ export interface YouTubePlayerHandle {
 const { width } = Dimensions.get('window');
 const playerHeight = (width * 9) / 16; // Ratio 16:9
 
+async function safeGetCurrentTime(
+  playerRef: React.RefObject<any>,
+  isReady: boolean,
+  fallbackTime: number
+): Promise<number> {
+  if (playerRef.current && isReady) {
+    try {
+      const time = await playerRef.current.getCurrentTime();
+      return time || 0;
+    } catch (error) {
+      return fallbackTime;
+    }
+  }
+  return fallbackTime;
+}
+
+function safeSeekTo(
+  playerRef: React.RefObject<any>,
+  isReady: boolean,
+  time: number,
+  allowSeekAhead?: boolean
+): void {
+  if (playerRef.current && isReady) {
+    playerRef.current.seekTo(time, allowSeekAhead);
+  }
+}
+
+function createPlayerHandleMethods(
+  playerRef: React.RefObject<any>,
+  isReady: boolean,
+  currentTime: number
+): YouTubePlayerHandle {
+  return {
+    getCurrentTime: async () => safeGetCurrentTime(playerRef, isReady, currentTime),
+    seekTo: (time: number, allowSeekAhead?: boolean) =>
+      safeSeekTo(playerRef, isReady, time, allowSeekAhead),
+    playVideo: () => {
+      // The react-native-youtube-iframe doesn't expose direct play/pause methods
+    },
+    pauseVideo: () => {
+      // The react-native-youtube-iframe doesn't expose direct play/pause methods
+    },
+  };
+}
+
+function hasStateChanged(
+  prevState: VideoState,
+  newState: VideoState
+): boolean {
+  const playingChanged = prevState.isPlaying !== newState.isPlaying;
+  const readyChanged = prevState.isReady !== newState.isReady;
+  const durationChanged = prevState.duration !== newState.duration;
+  const timeChanged = Math.abs(prevState.currentTime - newState.currentTime) > 2;
+
+  return playingChanged || readyChanged || durationChanged || timeChanged;
+}
+
 export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(
   ({ videoId, onStateChange, onVideoEnd, seekToTime, autoplay = false }, ref) => {
     const playerRef = useRef<any>(null);
@@ -30,46 +87,12 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
 
-    // Expose methods to parent component
     useImperativeHandle(
       ref,
-      () => ({
-        getCurrentTime: async () => {
-          if (playerRef.current && isReady) {
-            try {
-              const time = await playerRef.current.getCurrentTime();
-
-              return time || 0;
-            } catch (error) {
-              return currentTime; // Fallback to state current time
-            }
-          }
-          return currentTime; // Fallback to state current time
-        },
-        seekTo: (time: number, allowSeekAhead?: boolean) => {
-          if (playerRef.current && isReady) {
-            playerRef.current.seekTo(time, allowSeekAhead);
-          }
-        },
-        playVideo: () => {
-          if (playerRef.current && isReady) {
-            // The react-native-youtube-iframe doesn't expose direct play/pause methods
-            // Instead, we can trigger state change through the component's play prop
-            // For now, we just update the state - the actual control should be done
-            // through the YouTube player's native controls
-          }
-        },
-        pauseVideo: () => {
-          if (playerRef.current && isReady) {
-            // The react-native-youtube-iframe doesn't expose direct play/pause methods
-            // Instead, users should use the native YouTube player controls
-          }
-        },
-      }),
+      () => createPlayerHandleMethods(playerRef, isReady, currentTime),
       [isReady, currentTime]
     );
 
-    // Track if we've already seeked to avoid infinite loops
     const lastSeekTimeRef = useRef<number | undefined>(undefined);
     const hasProcessedSeekRef = useRef(false);
 
@@ -83,11 +106,8 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
       ) {
         hasProcessedSeekRef.current = true;
         lastSeekTimeRef.current = seekToTime;
-
-        // Perform the seek
         playerRef.current.seekTo(seekToTime, true);
 
-        // Reset the processing flag after seek is done
         setTimeout(() => {
           lastSeekTimeRef.current = undefined;
           hasProcessedSeekRef.current = false;
@@ -95,7 +115,6 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
       }
     }, [seekToTime, isReady]);
 
-    // CRITICAL FIX: Use useRef to track previous state and only call onStateChange when needed
     const prevStateRef = useRef<VideoState>({
       isPlaying: false,
       currentTime: 0,
@@ -111,16 +130,8 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
         isReady,
       };
 
-      // Only call onStateChange if something important actually changed
-      const playingChanged = prevStateRef.current.isPlaying !== newState.isPlaying;
-      const readyChanged = prevStateRef.current.isReady !== newState.isReady;
-      const durationChanged = prevStateRef.current.duration !== newState.duration;
-      const timeChanged = Math.abs(prevStateRef.current.currentTime - newState.currentTime) > 2; // Only if time diff > 2 sec
-
-      const hasChanged = playingChanged || readyChanged || durationChanged || timeChanged;
-
-      if (hasChanged) {
-        prevStateRef.current = { ...newState }; // Create a copy to avoid reference issues
+      if (hasStateChanged(prevStateRef.current, newState)) {
+        prevStateRef.current = { ...newState };
         onStateChange(newState);
       }
     }, [isPlaying, currentTime, duration, isReady, onStateChange]);
@@ -135,7 +146,6 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
           break;
         case 'ended':
           setIsPlaying(false);
-          // Call onVideoEnd callback when video finishes
           if (onVideoEnd) {
             onVideoEnd();
           }
@@ -194,14 +204,14 @@ export const YouTubePlayerComponent = forwardRef<YouTubePlayerHandle, YouTubePla
             mediaPlaybackRequiresUserAction: false,
           }}
           initialPlayerParams={{
-            rel: 0, // Pas de vidéos suggérées à la fin
-            modestbranding: 1, // Branding YouTube minimal
-            showinfo: 0, // Pas d'infos sur la vidéo
-            iv_load_policy: 3, // Pas d'annotations
-            controls: 1, // Contrôles affichés
-            disablekb: 0, // Raccourcis clavier activés
-            fs: 1, // Plein écran autorisé
-            playsinline: 1, // Lecture inline sur mobile
+            rel: 0,
+            modestbranding: 1,
+            showinfo: 0,
+            iv_load_policy: 3,
+            controls: 1,
+            disablekb: 0,
+            fs: 1,
+            playsinline: 1,
           }}
         />
       </View>

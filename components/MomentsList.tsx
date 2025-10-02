@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CapturedMoment } from '../types/moment';
 import { Colors } from '../constants/Colors';
 import { SwipeableItem } from './SwipeableItem';
 import { formatDuration } from '../utils/time';
+import { MomentEditModal } from './moments/MomentEditModal';
+import { useMomentsContext } from '../contexts/MomentsContext';
 
 interface MomentsListProps {
   moments: CapturedMoment[];
@@ -17,13 +19,30 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   onPlayMoment,
   onDeleteMoment,
 }) => {
+  const { updateMoment } = useMomentsContext();
+  const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const getThumbnailUrl = (videoId: string) => {
+    return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  };
+
+  const handleLongPress = (moment: CapturedMoment) => {
+    setEditingMoment(moment);
+  };
+
+  const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
+    updateMoment(momentId, updates);
+    setEditingMoment(null);
+  };
+
   const renderMoment = ({ item, index }: { item: CapturedMoment; index: number }) => {
+    const thumbnailUrl = getThumbnailUrl(item.videoId);
+
     return (
       <SwipeableItem
         onDelete={() => onDeleteMoment(item.id)}
@@ -35,24 +54,30 @@ export const MomentsList: React.FC<MomentsListProps> = ({
         <TouchableOpacity
           style={styles.momentItem}
           onPress={() => onPlayMoment(item.timestamp)}
+          onLongPress={() => handleLongPress(item)}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel={`Lire le moment ${index + 1} à ${formatTime(item.timestamp)}`}
-          accessibilityHint="Appuyez pour lire ce moment, ou balayez vers la gauche pour supprimer"
+          accessibilityHint="Appuyez pour lire ce moment, maintenez pour éditer, ou balayez pour supprimer"
         >
-          <View style={styles.momentContent}>
-            <View style={styles.momentInfo}>
-              <View style={styles.momentHeader}>
-                <Text style={styles.momentTitle}>Moment {index + 1}</Text>
-                <Text style={styles.momentDuration}>{formatDuration(item.duration)}</Text>
-              </View>
-              <Text style={styles.momentTimestamp}>Débute à {formatTime(item.timestamp)}</Text>
+          {/* Thumbnail 72x72 avec image YouTube */}
+          <View style={styles.momentThumbnail}>
+            <Image
+              source={{ uri: thumbnailUrl }}
+              style={styles.thumbnailImage}
+              resizeMode="cover"
+            />
+            <View style={styles.playOverlay}>
+              <Ionicons name="play-circle" size={28} color="#FFFFFF" />
             </View>
-            <View style={styles.momentActions}>
-              <View style={styles.playIcon}>
-                <Ionicons name="play" size={20} color={Colors.primary} />
-              </View>
-            </View>
+          </View>
+
+          {/* Info */}
+          <View style={styles.momentInfo}>
+            <Text style={styles.momentTitle} numberOfLines={1}>
+              Moment {index + 1}
+            </Text>
+            <Text style={styles.momentTimestamp}>à {formatTime(item.timestamp)}</Text>
           </View>
         </TouchableOpacity>
       </SwipeableItem>
@@ -70,14 +95,25 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Moments</Text>
-      <View style={styles.list}>
-        {moments.map((item, index) => (
-          <View key={item.id}>{renderMoment({ item, index })}</View>
-        ))}
+    <>
+      <View style={styles.container}>
+        <Text style={styles.header}>Moments</Text>
+        <View style={styles.list}>
+          {moments.map((item, index) => (
+            <View key={item.id}>{renderMoment({ item, index })}</View>
+          ))}
+        </View>
       </View>
-    </View>
+
+      {editingMoment && (
+        <MomentEditModal
+          moment={editingMoment}
+          visible={!!editingMoment}
+          onClose={() => setEditingMoment(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
+    </>
   );
 };
 
@@ -92,67 +128,53 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   list: {
-    // Removed flex: 1 to allow natural height
+    gap: 16,
   },
   swipeableContainer: {
-    marginBottom: 12,
+    marginBottom: 0,
   },
   momentItem: {
-    backgroundColor: Colors.background.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    shadowOpacity: 0,
-    elevation: 0,
-    overflow: 'hidden',
-  },
-  momentContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 0,
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  momentThumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    backgroundColor: Colors.background.tertiary,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  playOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   momentInfo: {
     flex: 1,
   },
-  momentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   momentTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.text.primary,
-  },
-  momentDuration: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    backgroundColor: Colors.background.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    marginBottom: 4,
   },
   momentTimestamp: {
     fontSize: 14,
+    fontWeight: '400',
     color: Colors.text.secondary,
-  },
-  momentActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  playIcon: {
-    backgroundColor: Colors.background.primary,
-    padding: 8,
-    borderRadius: 8,
-  },
-  swipeHint: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 24,
-    height: 24,
-    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,

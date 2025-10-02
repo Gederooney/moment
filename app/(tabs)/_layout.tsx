@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import { HomeIcon, ListIcon, SettingsIcon } from '../../components/icons';
 
 export default function TabsLayout() {
   return (
@@ -29,7 +29,7 @@ export default function TabsLayout() {
         options={{
           title: 'Accueil',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <HomeIcon size={size} color={color} focused={focused} />
           ),
         }}
       />
@@ -38,16 +38,16 @@ export default function TabsLayout() {
         options={{
           title: 'Moments',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={size} color={color} />
+            <ListIcon size={size} color={color} focused={focused} />
           ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Profile',
+          title: 'Paramètres',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+            <SettingsIcon size={size} color={color} focused={focused} />
           ),
         }}
       />

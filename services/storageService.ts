@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from './logger/Logger';
 
 export interface DownloadHistory {
   id: string;
@@ -21,6 +22,7 @@ export class StorageService {
       const historyJson = await AsyncStorage.getItem(this.HISTORY_KEY);
       return historyJson ? JSON.parse(historyJson) : [];
     } catch (error) {
+      Logger.error('StorageService.getDownloadHistory', error instanceof Error ? error : 'Failed to get download history');
       return [];
     }
   }
@@ -30,7 +32,10 @@ export class StorageService {
       const history = await this.getDownloadHistory();
       const updatedHistory = [download, ...history.slice(0, 49)]; // Keep last 50 downloads
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(updatedHistory));
-    } catch (error) {}
+    } catch (error) {
+      Logger.error('StorageService.addToHistory', error instanceof Error ? error : 'Failed to add to history', { downloadId: download.id });
+      throw error;
+    }
   }
 
   static async removeFromHistory(id: string): Promise<void> {
@@ -38,13 +43,19 @@ export class StorageService {
       const history = await this.getDownloadHistory();
       const updatedHistory = history.filter(item => item.id !== id);
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(updatedHistory));
-    } catch (error) {}
+    } catch (error) {
+      Logger.error('StorageService.removeFromHistory', error instanceof Error ? error : 'Failed to remove from history', { id });
+      throw error;
+    }
   }
 
   static async clearHistory(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.HISTORY_KEY);
-    } catch (error) {}
+    } catch (error) {
+      Logger.error('StorageService.clearHistory', error instanceof Error ? error : 'Failed to clear history');
+      throw error;
+    }
   }
 
   // Settings Management
@@ -53,6 +64,7 @@ export class StorageService {
       const settingsJson = await AsyncStorage.getItem(this.SETTINGS_KEY);
       return settingsJson ? JSON.parse(settingsJson) : {};
     } catch (error) {
+      Logger.error('StorageService.getSettings', error instanceof Error ? error : 'Failed to get settings');
       return {};
     }
   }
@@ -62,7 +74,10 @@ export class StorageService {
       const settings = await this.getSettings();
       settings[key] = value;
       await AsyncStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
-    } catch (error) {}
+    } catch (error) {
+      Logger.error('StorageService.setSetting', error instanceof Error ? error : 'Failed to set setting', { key, value });
+      throw error;
+    }
   }
 
   static async getSetting<T>(key: string, defaultValue: T): Promise<T> {
@@ -70,6 +85,7 @@ export class StorageService {
       const settings = await this.getSettings();
       return settings[key] !== undefined ? settings[key] : defaultValue;
     } catch (error) {
+      Logger.error('StorageService.getSetting', error instanceof Error ? error : 'Failed to get setting', { key });
       return defaultValue;
     }
   }

@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   TouchableOpacity,
   Text,
-  StyleSheet,
   Animated,
   View,
-  Vibration,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../constants/Colors';
 import { Typography, DrivingTypography } from '../constants/Typography';
-import { Spacing, Component, DrivingSpacing } from '../constants/Spacing';
+import { Component, DrivingSpacing } from '../constants/Spacing';
 import { ComponentShadows, GlowShadows } from '../constants/Shadows';
+import { useCaptureAnimation, formatTime } from './useCaptureAnimation';
+import { styles } from './CaptureButton.styles';
 
 interface CaptureButtonProps {
   onCapture: () => void;
@@ -23,7 +22,7 @@ interface CaptureButtonProps {
   drivingMode?: boolean;
   loading?: boolean;
   accessibilityLabel?: string;
-  modern?: boolean; // Nouveau prop pour le design moderne
+  modern?: boolean;
 }
 
 export const CaptureButton: React.FC<CaptureButtonProps> = ({
@@ -36,74 +35,12 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
   accessibilityLabel,
   modern = false,
 }) => {
-  const [scaleValue] = useState(new Animated.Value(1));
-  const [pulseValue] = useState(new Animated.Value(1));
   const colors = getColors(isDark);
-
-  // Pulse animation for better visibility while driving
-  useEffect(() => {
-    if (!drivingMode || disabled || loading) return;
-
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseValue, {
-          toValue: 1.05,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    pulseAnimation.start();
-
-    return () => {
-      pulseAnimation.stop();
-    };
-  }, [drivingMode, disabled, loading, pulseValue]);
-
-  const handlePress = () => {
-    if (disabled || loading) return;
-
-    // Haptic feedback for better driving experience
-    if (Platform.OS === 'ios') {
-      Vibration.vibrate([100]);
-    } else {
-      Vibration.vibrate(100);
-    }
-
-    // Enhanced animation feedback
-    Animated.sequence([
-      Animated.timing(scaleValue, {
-        toValue: 0.92,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleValue, {
-        toValue: 1,
-        tension: 300,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    onCapture();
-  };
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const { scaleValue, pulseValue, handlePressAnimation } = useCaptureAnimation(
+    drivingMode,
+    disabled,
+    loading
+  );
 
   const getButtonStyle = () => {
     if (modern) {
@@ -114,15 +51,12 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
         backgroundColor: disabled
           ? '#E0E0E0'
           : loading
-            ? '#FF3B30B0' // Semi-transparent rouge
-            : '#FF3B30', // Rouge YouTube
+            ? '#FF3B30B0'
+            : '#FF3B30',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#FF3B30',
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: disabled ? 0 : 0.3,
         shadowRadius: 8,
         elevation: disabled ? 0 : 8,
@@ -176,7 +110,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
       >
         <TouchableOpacity
           style={[getButtonStyle(), disabled && styles.buttonDisabled]}
-          onPress={handlePress}
+          onPress={() => handlePressAnimation(onCapture)}
           disabled={disabled || loading}
           activeOpacity={0.7}
           accessibilityLabel={
@@ -215,7 +149,7 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
     >
       <TouchableOpacity
         style={[styles.button, getButtonStyle(), disabled && styles.buttonDisabled]}
-        onPress={handlePress}
+        onPress={() => handlePressAnimation(onCapture)}
         disabled={disabled || loading}
         activeOpacity={0.8}
         accessibilityLabel={accessibilityLabel || `Capturer le moment à ${formatTime(currentTime)}`}
@@ -274,51 +208,3 @@ export const CaptureButton: React.FC<CaptureButtonProps> = ({
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginVertical: Spacing.md2,
-  },
-  containerDisabled: {
-    opacity: 0.6,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  iconContainer: {
-    marginRight: Spacing.md,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingSpinner: {
-    // Loading animation can be added here
-  },
-  textContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  buttonText: {
-    textAlign: 'center',
-    fontWeight: 'bold',
-    letterSpacing: 1,
-  },
-  buttonTextDisabled: {
-    // Handled by color prop
-  },
-  timeText: {
-    textAlign: 'center',
-    marginTop: Spacing.xs,
-    opacity: 0.9,
-  },
-  timeTextDisabled: {
-    // Handled by color prop
-  },
-});

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { QueueItem, QueueVideoItem } from './QueueItem';
@@ -56,30 +56,17 @@ export const QueueList: React.FC<QueueListProps> = ({
         style={[
           styles.itemContainer,
           isActive && styles.dragging,
-          isCurrentVideo && styles.currentVideoContainer,
         ]}
       >
-        <View style={styles.queueItemWrapper}>
-          <QueueItem
-            item={item}
-            isCurrentVideo={isCurrentVideo}
-            onPress={onVideoPress}
-            onRemove={onVideoRemove}
-            isDark={isDark}
-          />
-        </View>
-
-        {/* Drag handle - seulement si ce n'est pas la vidéo actuelle */}
-        {!isCurrentVideo && (
-          <TouchableOpacity
-            onPressIn={drag}
-            disabled={isActive}
-            style={[styles.dragHandle, { backgroundColor: colors.background.secondary }]}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="reorder-three-outline" size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
-        )}
+        <QueueItem
+          item={item}
+          isCurrentVideo={isCurrentVideo}
+          onPress={onVideoPress}
+          onLongPress={!isCurrentVideo ? drag : undefined}
+          onRemove={onVideoRemove}
+          isDark={isDark}
+          isDragging={isActive}
+        />
       </View>
     );
   };
@@ -108,42 +95,27 @@ const styles = StyleSheet.create({
   },
   itemContainer: {
     width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
   },
   dragging: {
-    opacity: 0.9,
-    transform: [{ scale: 1.02 }],
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  queueItemWrapper: {
-    flex: 1,
-    marginRight: 40, // Espace pour le drag handle
-  },
-  dragHandle: {
-    position: 'absolute',
-    right: 8,
-    top: '50%',
-    marginTop: -15,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.6,
-  },
-  currentVideoContainer: {
-    opacity: 0.6, // Indique qu'on ne peut pas déplacer la vidéo en cours
+    opacity: 0.95,
+    transform: [{ scale: 1.05 }],
+    borderRadius: 12,
+    backgroundColor: 'rgba(108, 99, 255, 0.1)',
+    // Shadow pour iOS
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.4,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   lastItem: {
     marginBottom: 0,

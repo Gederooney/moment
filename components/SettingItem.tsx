@@ -4,12 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 
 export interface SettingItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap | React.ReactNode;
   title: string;
   subtitle?: string;
   value?: string | number | boolean;
-  type?: 'button' | 'switch' | 'picker' | 'info';
+  type?: 'button' | 'switch' | 'picker' | 'info' | 'action';
   destructive?: boolean;
+  isDestructive?: boolean;
   disabled?: boolean;
   onPress?: () => void;
   onToggle?: (value: boolean) => void;
@@ -23,11 +24,14 @@ export const SettingItem: React.FC<SettingItemProps> = ({
   value,
   type = 'button',
   destructive = false,
+  isDestructive = false,
   disabled = false,
   onPress,
   onToggle,
   showChevron = true,
 }) => {
+  const isDestructiveStyle = destructive || isDestructive;
+
   const handlePress = () => {
     if (disabled) return;
 
@@ -59,7 +63,7 @@ export const SettingItem: React.FC<SettingItemProps> = ({
         return (
           <View style={styles.valueContainer}>
             {value !== undefined && (
-              <Text style={[styles.valueText, destructive && styles.valueTextDestructive]}>
+              <Text style={[styles.valueText, isDestructiveStyle && styles.valueTextDestructive]}>
                 {value}
               </Text>
             )}
@@ -73,6 +77,11 @@ export const SettingItem: React.FC<SettingItemProps> = ({
             )}
           </View>
         );
+
+      case 'action':
+        return showChevron ? (
+          <Ionicons name="chevron-forward" size={16} color={Colors.text.light} />
+        ) : null;
 
       default:
         return showChevron ? (
@@ -88,19 +97,23 @@ export const SettingItem: React.FC<SettingItemProps> = ({
       disabled={disabled || type === 'info'}
       activeOpacity={0.7}
     >
-      <View style={[styles.iconContainer, destructive && styles.iconContainerDestructive]}>
-        <Ionicons
-          name={icon}
-          size={20}
-          color={destructive ? Colors.error : Colors.text.secondary}
-        />
+      <View style={[styles.iconContainer, isDestructiveStyle && styles.iconContainerDestructive]}>
+        {typeof icon === 'string' ? (
+          <Ionicons
+            name={icon}
+            size={20}
+            color={isDestructiveStyle ? Colors.error : Colors.text.secondary}
+          />
+        ) : (
+          icon
+        )}
       </View>
 
       <View style={styles.content}>
         <Text
           style={[
             styles.title,
-            destructive && styles.titleDestructive,
+            isDestructiveStyle && styles.titleDestructive,
             disabled && styles.titleDisabled,
           ]}
         >

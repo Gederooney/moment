@@ -22,8 +22,10 @@ interface QueueItemProps {
   item: QueueVideoItem;
   isCurrentVideo?: boolean;
   onPress: (item: QueueVideoItem) => void;
+  onLongPress?: () => void;
   onRemove?: (item: QueueVideoItem) => void;
   isDark?: boolean;
+  isDragging?: boolean;
   style?: ViewStyle;
 }
 
@@ -31,8 +33,10 @@ export const QueueItem: React.FC<QueueItemProps> = ({
   item,
   isCurrentVideo = false,
   onPress,
+  onLongPress,
   onRemove,
   isDark = true,
+  isDragging = false,
   style,
 }) => {
   const colors = getColors(isDark);
@@ -84,10 +88,12 @@ export const QueueItem: React.FC<QueueItemProps> = ({
       <TouchableOpacity
         style={containerStyle}
         onPress={handlePress}
+        onLongPress={onLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.8}
-        accessibilityLabel={`Lecture de ${item.title}`}
+        delayLongPress={300}
+        accessibilityLabel={`Lecture de ${item.title}${onLongPress ? '. Maintenez pour réorganiser' : ''}`}
         accessibilityRole="button"
         accessibilityState={{ selected: isCurrentVideo }}
       >

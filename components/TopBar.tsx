@@ -17,7 +17,7 @@ const TopBarComponent = React.memo(function TopBar({ title, backButtonText = '' 
 
   // Auto-detect if we should show back button based on context state or video state
   const shouldShowBackButton = state.showBackButton || !!state.currentVideoId;
-  const displayTitle = state.currentVideoId ? state.title : title;
+  const displayTitle = state.title || title;
 
   // Handle back button press
   const handleBackPress = () => {

@@ -45,12 +45,9 @@ export const Queue: React.FC<QueueProps> = ({
 }) => {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [animatedHeight] = useState(new Animated.Value(1));
   const [animatedRotation] = useState(new Animated.Value(0));
 
   const colors = getColors(isDark);
-  const screenHeight = Dimensions.get('window').height;
-  const maxQueueHeight = Math.min(300, screenHeight * 0.4);
 
   const handleAddPress = () => {
     setIsAddModalVisible(true);
@@ -69,18 +66,11 @@ export const Queue: React.FC<QueueProps> = ({
     const newExpanded = !isExpanded;
     setIsExpanded(newExpanded);
 
-    Animated.parallel([
-      Animated.timing(animatedHeight, {
-        toValue: newExpanded ? 1 : 0,
-        duration: 300,
-        useNativeDriver: false,
-      }),
-      Animated.timing(animatedRotation, {
-        toValue: newExpanded ? 0 : 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(animatedRotation, {
+      toValue: newExpanded ? 0 : 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const rotateInterpolation = animatedRotation.interpolate({
@@ -88,58 +78,48 @@ export const Queue: React.FC<QueueProps> = ({
     outputRange: ['0deg', '180deg'],
   });
 
-  const heightInterpolation = animatedHeight.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, maxQueueHeight],
-  });
-
   return (
     <>
       <QueueContainer isDark={isDark} style={style}>
-        {/* Collapsible Header */}
-        <TouchableOpacity
-          style={styles.collapsibleHeader}
-          onPress={toggleExpanded}
-          activeOpacity={0.7}
-        >
-          <View style={styles.headerLeft}>
+        {/* Collapsible Header - Wireframe 2 */}
+        <View style={styles.collapsibleHeader}>
+          <TouchableOpacity
+            style={styles.headerLeft}
+            onPress={toggleExpanded}
+            activeOpacity={0.7}
+          >
             <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
-              File d'attente ({videos.length})
+              File de lecture
             </Text>
-          </View>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={[styles.addButton, { backgroundColor: colors.primary }]}
-              onPress={e => {
-                e.stopPropagation();
-                handleAddPress();
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={16} color={colors.text.white} />
-            </TouchableOpacity>
-
             <Animated.View
               style={[styles.chevronContainer, { transform: [{ rotate: rotateInterpolation }] }]}
             >
               <Ionicons name="chevron-down" size={20} color={colors.text.secondary} />
             </Animated.View>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        {/* Collapsible Content */}
-        <Animated.View style={[styles.collapsibleContent, { height: heightInterpolation }]}>
-          <QueueList
-            videos={videos}
-            currentVideoId={currentVideoId}
-            onVideoPress={onVideoPress}
-            onVideoRemove={onVideoRemove}
-            onVideoReorder={onVideoReorder}
-            isDark={isDark}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddPress}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Collapsible Content - Hauteur dynamique sans limite */}
+        {isExpanded && (
+          <View style={styles.collapsibleContent}>
+            <QueueList
+              videos={videos}
+              currentVideoId={currentVideoId}
+              onVideoPress={onVideoPress}
+              onVideoRemove={onVideoRemove}
+              onVideoReorder={onVideoReorder}
+              isDark={isDark}
+            />
+          </View>
+        )}
       </QueueContainer>
 
       <AddVideoModal
@@ -157,34 +137,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 4,
   },
   headerLeft: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerTitle: {
     ...Typography.body,
     fontWeight: '600',
-    fontSize: 15,
+    fontSize: 18,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  addButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   chevronContainer: {
     padding: 2,
   },
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(128, 128, 128, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   collapsibleContent: {
-    overflow: 'hidden',
+    // Pas de limite de hauteur - prend tout l'espace nécessaire
   },
 });
 
