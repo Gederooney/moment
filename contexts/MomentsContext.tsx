@@ -30,6 +30,7 @@ interface MomentsContextType {
   ) => Promise<CapturedMoment>;
   getMomentsForVideo: (videoId: string) => CapturedMoment[];
   deleteMomentFromVideo: (videoId: string, momentId: string) => Promise<void>;
+  getAllMoments: () => CapturedMoment[];
 }
 
 const MomentsContext = createContext<MomentsContextType | undefined>(undefined);
@@ -191,6 +192,10 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
     [updateMoment]
   );
 
+  const getAllMoments = useCallback((): CapturedMoment[] => {
+    return videoHistory.videos.flatMap(video => video.moments);
+  }, [videoHistory.videos]);
+
   const contextValue: MomentsContextType = {
     videos: videoHistory.videos,
     isLoading: videoHistory.isLoading,
@@ -210,6 +215,7 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
     captureMoment,
     getMomentsForVideo,
     deleteMomentFromVideo,
+    getAllMoments,
   };
 
   return <MomentsContext.Provider value={contextValue}>{children}</MomentsContext.Provider>;

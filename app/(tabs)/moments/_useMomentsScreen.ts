@@ -76,6 +76,8 @@ export function useMomentsScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMomentIds, setSelectedMomentIds] = useState<Set<string>>(new Set());
 
   // Debounce search query (300ms)
   useEffect(() => {
@@ -226,6 +228,28 @@ export function useMomentsScreen() {
     return filteredVideos.reduce((count, video) => count + video.moments.length, 0);
   }, [filteredVideos]);
 
+  const handleToggleSelection = useCallback(() => {
+    setIsSelectionMode(prev => !prev);
+    setSelectedMomentIds(new Set());
+  }, []);
+
+  const handleToggleMomentSelect = useCallback((momentId: string) => {
+    setSelectedMomentIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(momentId)) {
+        newSet.delete(momentId);
+      } else {
+        newSet.add(momentId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedMomentIds(new Set());
+  }, []);
+
   const showAddVideoModal = useCallback(() => {
     setIsModalVisible(true);
     modalAnimation.setValue(0);
@@ -330,5 +354,10 @@ export function useMomentsScreen() {
     handleToggleTag,
     handleClearTagFilters,
     getFilteredMomentsCount,
+    isSelectionMode,
+    selectedMomentIds,
+    handleToggleSelection,
+    handleToggleMomentSelect,
+    handleCancelSelection,
   };
 }

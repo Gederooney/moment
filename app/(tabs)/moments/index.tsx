@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
 } from 'react-native';
 import { Colors } from '../../../constants/Colors';
@@ -15,9 +16,15 @@ import { MomentsLoadingState } from './_MomentsLoadingState';
 import { MomentsList } from './_MomentsList';
 import { TagFilterChips } from '../../../components/TagFilterChips';
 import { ExportModal } from '../../../components/ExportModal';
+import { SelectionToolbar } from '../../../components/SelectionToolbar';
+import { FolderPickerModal } from '../../../components/FolderPickerModal/FolderPickerModal';
+import { useFolders } from '../../../hooks/useFolders';
+import { Alert } from 'react-native';
 
 export default function MomentsScreen() {
   const [showExportModal, setShowExportModal] = React.useState(false);
+  const [showBulkFolderPicker, setShowBulkFolderPicker] = React.useState(false);
+  const { folders, addMomentToFolder, createFolder } = useFolders();
   const {
     videos,
     isLoading,
@@ -47,6 +54,11 @@ export default function MomentsScreen() {
     handleToggleTag,
     handleClearTagFilters,
     getFilteredMomentsCount,
+    isSelectionMode,
+    selectedMomentIds,
+    handleToggleSelection,
+    handleToggleMomentSelect,
+    handleCancelSelection,
   } = useMomentsScreen();
 
   const renderVideoItem = useCallback(
@@ -58,6 +70,9 @@ export default function MomentsScreen() {
         onPlayMoment={handlePlayMoment}
         onDeleteMoment={handleDeleteMoment}
         onDeleteAllMoments={handleDeleteAllMomentsForVideo}
+        isSelectionMode={isSelectionMode}
+        selectedMomentIds={selectedMomentIds}
+        onToggleMomentSelect={handleToggleMomentSelect}
       />
     ),
     [
@@ -66,8 +81,62 @@ export default function MomentsScreen() {
       handlePlayMoment,
       handleDeleteMoment,
       handleDeleteAllMomentsForVideo,
+      isSelectionMode,
+      selectedMomentIds,
+      handleToggleMomentSelect,
     ]
   );
+
+  // Get all moments for export and selection
+  const allMoments = filteredVideos.flatMap(video => video.moments);
+  const hasExportableMoments = allMoments.length > 0;
+
+  const handleBulkAddToFolder = React.useCallback(async (folderId: string) => {
+    try {
+      const selectedIds = Array.from(selectedMomentIds);
+      for (const momentId of selectedIds) {
+        await addMomentToFolder(folderId, momentId);
+      }
+      Alert.alert('Succès', `${selectedIds.length} moment(s) ajouté(s) au dossier`);
+      handleCancelSelection();
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible d\'ajouter les moments au dossier');
+    }
+  }, [selectedMomentIds, addMomentToFolder, handleCancelSelection]);
+
+  const handleBulkDelete = React.useCallback(() => {
+    Alert.alert(
+      'Supprimer les moments',
+      `Êtes-vous sûr de vouloir supprimer ${selectedMomentIds.size} moment(s) ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const selectedIds = Array.from(selectedMomentIds);
+              for (const momentId of selectedIds) {
+                await handleDeleteMoment(momentId);
+              }
+              Alert.alert('Succès', `${selectedIds.length} moment(s) supprimé(s)`);
+              handleCancelSelection();
+            } catch (error) {
+              Alert.alert('Erreur', 'Impossible de supprimer les moments');
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedMomentIds, handleDeleteMoment, handleCancelSelection]);
+
+  const handleBulkExport = React.useCallback(() => {
+    const selectedMoments = allMoments.filter(m => selectedMomentIds.has(m.id));
+    if (selectedMoments.length > 0) {
+      // TODO: Implement bulk export
+      Alert.alert('Export', `Exporter ${selectedMoments.length} moment(s)`);
+    }
+  }, [selectedMomentIds, allMoments]);
 
   const renderEmptyComponent = () => {
     if (videos.length === 0) {
@@ -89,16 +158,14 @@ export default function MomentsScreen() {
     return <MomentsLoadingState />;
   }
 
-  // Get all moments for export
-  const allMoments = filteredVideos.flatMap(video => video.moments);
-  const hasExportableMoments = allMoments.length > 0;
-
   return (
     <View style={styles.container}>
       <MomentsHeader
         onAddVideo={showAddVideoModal}
         onExport={() => setShowExportModal(true)}
         hasExportableMoments={hasExportableMoments}
+        onToggleSelection={handleToggleSelection}
+        isSelectionMode={isSelectionMode}
       />
 
       <MomentsSearchBar
@@ -152,6 +219,30 @@ export default function MomentsScreen() {
         moments={allMoments}
         videoTitle={filteredVideos.length === 1 ? filteredVideos[0].title : undefined}
         onClose={() => setShowExportModal(false)}
+      />
+
+      {isSelectionMode && (
+        <SelectionToolbar
+          selectedCount={selectedMomentIds.size}
+          onAddToFolder={() => setShowBulkFolderPicker(true)}
+          onDelete={handleBulkDelete}
+          onExport={handleBulkExport}
+          onCancel={handleCancelSelection}
+        />
+      )}
+
+      <FolderPickerModal
+        visible={showBulkFolderPicker}
+        folders={folders}
+        onClose={() => setShowBulkFolderPicker(false)}
+        onSelectFolder={(folderId) => {
+          setShowBulkFolderPicker(false);
+          handleBulkAddToFolder(folderId);
+        }}
+        onCreateFolder={async (name, parentId) => {
+          await createFolder(name, parentId);
+        }}
+        title="Ajouter à un dossier"
       />
     </View>
   );

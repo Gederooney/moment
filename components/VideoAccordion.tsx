@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { VideoWithMoments } from '../types/moment';
 import { AnimatedMomentItem } from './AnimatedMomentItem';
+import { MomentItemSelectable } from './MomentItemSelectable';
 
 interface VideoAccordionProps {
   video: VideoWithMoments;
@@ -21,6 +22,9 @@ interface VideoAccordionProps {
   onPlayMoment: (videoId: string, timestamp: number) => void;
   onDeleteMoment: (momentId: string) => void;
   onDeleteAllMoments: (videoId: string) => void;
+  isSelectionMode?: boolean;
+  selectedMomentIds?: Set<string>;
+  onToggleMomentSelect?: (momentId: string) => void;
 }
 
 export const VideoAccordion: React.FC<VideoAccordionProps> = ({
@@ -30,6 +34,9 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
   onPlayMoment,
   onDeleteMoment,
   onDeleteAllMoments,
+  isSelectionMode = false,
+  selectedMomentIds = new Set(),
+  onToggleMomentSelect,
 }) => {
   const [animation] = useState(new Animated.Value(isExpanded ? 1 : 0));
   const [previousMomentsCount, setPreviousMomentsCount] = useState(video.moments.length);
@@ -156,6 +163,22 @@ export const VideoAccordion: React.FC<VideoAccordionProps> = ({
           ) : (
             sortedMoments.map((moment, index) => {
               const isNewMoment = index === 0 && video.moments.length > previousMomentsCount;
+
+              if (isSelectionMode && onToggleMomentSelect) {
+                return (
+                  <MomentItemSelectable
+                    key={moment.id}
+                    moment={moment}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedMomentIds.has(moment.id)}
+                    onToggleSelect={() => onToggleMomentSelect(moment.id)}
+                    onPlay={() => onPlayMoment(video.id, moment.timestamp)}
+                    onDelete={() => onDeleteMoment(moment.id)}
+                    showNewBadge={isRecentMoment(moment.createdAt)}
+                  />
+                );
+              }
+
               return (
                 <AnimatedMomentItem
                   key={moment.id}
