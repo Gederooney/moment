@@ -1,8 +1,3 @@
-/**
- * Folders Screen
- * Display and manage folder hierarchy
- */
-
 import React, { useState } from 'react';
 import {
   View,
@@ -40,21 +35,17 @@ export default function FoldersScreen() {
   };
 
   const handleFolderLongPress = (folder: Folder) => {
-    Alert.alert(
-      folder.name,
-      'Choose an action',
-      [
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => handleDeleteFolder(folder),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    Alert.alert(folder.name, 'Choisissez une action', [
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: () => handleDeleteFolder(folder),
+      },
+      {
+        text: 'Annuler',
+        style: 'cancel',
+      },
+    ]);
   };
 
   const handleDeleteFolder = async (folder: Folder) => {
@@ -64,7 +55,7 @@ export default function FoldersScreen() {
         setCurrentFolder(null);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to delete folder');
+      Alert.alert('Erreur', 'Impossible de supprimer le dossier');
     }
   };
 
@@ -76,7 +67,7 @@ export default function FoldersScreen() {
       setNewFolderName('');
       setShowCreateModal(false);
     } catch (error) {
-      Alert.alert('Error', 'Failed to create folder');
+      Alert.alert('Erreur', 'Impossible de créer le dossier');
     }
   };
 
@@ -86,32 +77,28 @@ export default function FoldersScreen() {
       setCurrentFolder(null);
     } else {
       const targetFolderName = path[index];
-      const targetFolder = folders.find((f) => f.name === targetFolderName);
+      const targetFolder = folders.find(f => f.name === targetFolderName);
       if (targetFolder) {
         setCurrentFolder(targetFolder);
       }
     }
   };
 
-  const breadcrumbPath = currentFolder ? ['Home', ...getFolderPath(currentFolder.id)] : ['Home'];
+  const breadcrumbPath = currentFolder
+    ? ['Accueil', ...getFolderPath(currentFolder.id)]
+    : ['Accueil'];
 
   return (
     <View style={[styles.container, isDark && styles.containerDark]}>
       {/* Breadcrumb */}
-      <Breadcrumb
-        path={breadcrumbPath}
-        onNavigate={handleBreadcrumbNavigate}
-        darkMode={isDark}
-      />
+      <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} darkMode={isDark} />
 
       {/* Folder Tree */}
       {folders.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, isDark && styles.emptyTextDark]}>
-            📁 No folders yet
-          </Text>
+          <Text style={[styles.emptyText, isDark && styles.emptyTextDark]}>📁 Aucun dossier</Text>
           <Text style={[styles.emptySubtext, isDark && styles.emptySubtextDark]}>
-            Tap the + button to create your first folder
+            Appuyez sur le bouton + pour créer votre premier dossier
           </Text>
         </View>
       ) : (
@@ -142,13 +129,13 @@ export default function FoldersScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
             <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
-              New Folder
+              Nouveau dossier
             </Text>
 
             <TextInput
               value={newFolderName}
               onChangeText={setNewFolderName}
-              placeholder="Folder name..."
+              placeholder="Nom du dossier..."
               placeholderTextColor={isDark ? '#666' : '#999'}
               style={[styles.input, isDark && styles.inputDark]}
               autoFocus
@@ -157,7 +144,7 @@ export default function FoldersScreen() {
 
             {currentFolder && (
               <Text style={[styles.parentInfo, isDark && styles.parentInfoDark]}>
-                in {currentFolder.name}
+                dans {currentFolder.name}
               </Text>
             )}
 
@@ -169,14 +156,14 @@ export default function FoldersScreen() {
                   setNewFolderName('');
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Annuler</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.button, styles.createButton]}
                 onPress={handleCreateFolder}
               >
-                <Text style={styles.createButtonText}>Create</Text>
+                <Text style={styles.createButtonText}>Créer</Text>
               </TouchableOpacity>
             </View>
           </View>
