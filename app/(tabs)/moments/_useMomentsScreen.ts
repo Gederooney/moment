@@ -75,9 +75,19 @@ export function useMomentsScreen() {
   const [modalAnimation] = useState(new Animated.Value(0));
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
-  // First filter by search query
-  const searchFilteredVideos = searchVideos(searchQuery);
+  // Debounce search query (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // First filter by search query (using debounced value)
+  const searchFilteredVideos = searchVideos(debouncedSearchQuery);
 
   // Then filter by tags if any are selected
   const filteredVideos = selectedTags.length > 0

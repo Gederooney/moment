@@ -278,17 +278,43 @@ export const useVideoHistory = () => {
 
       const lowerQuery = query.toLowerCase();
 
-      return videos.filter(video => {
-        // Recherche dans le titre de la vidéo
-        const matchesVideoTitle = video.title.toLowerCase().includes(lowerQuery);
+      return videos
+        .map(video => {
+          // Check video title match
+          const matchesVideoTitle = video.title.toLowerCase().includes(lowerQuery);
 
-        // Recherche dans les titres des moments
-        const matchesMomentTitle = video.moments.some(moment =>
-          moment.title.toLowerCase().includes(lowerQuery)
-        );
+          // Filter moments that match the search query
+          const matchingMoments = video.moments.filter(moment => {
+            // Search in moment title
+            const matchesMomentTitle = moment.title.toLowerCase().includes(lowerQuery);
 
-        return matchesVideoTitle || matchesMomentTitle;
-      });
+            // Search in notes content
+            const matchesNotes = moment.notes?.toLowerCase().includes(lowerQuery) || false;
+
+            // Search in tags
+            const matchesTags = moment.tags?.some(tag =>
+              tag.toLowerCase().includes(lowerQuery)
+            ) || false;
+
+            return matchesMomentTitle || matchesNotes || matchesTags;
+          });
+
+          // If video title matches, return all moments
+          if (matchesVideoTitle) {
+            return video;
+          }
+
+          // If some moments match, return video with filtered moments
+          if (matchingMoments.length > 0) {
+            return {
+              ...video,
+              moments: matchingMoments,
+            };
+          }
+
+          return null;
+        })
+        .filter((video): video is VideoWithMoments => video !== null);
     },
     [videos]
   );
