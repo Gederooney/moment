@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CapturedMoment } from '../../types/moment';
 import { Colors } from '../../constants/Colors';
+import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
 
 interface MomentEditModalProps {
   moment: CapturedMoment;
@@ -13,16 +14,25 @@ interface MomentEditModalProps {
 
 export function MomentEditModal({ moment, visible, onClose, onSave }: MomentEditModalProps) {
   const [title, setTitle] = useState(moment.title);
+  const notesContentRef = useRef<string>(moment.notes || '');
+
+  const handleNotesChange = (html: string) => {
+    notesContentRef.current = html;
+  };
 
   const handleSave = () => {
     if (title.trim()) {
-      onSave(moment.id, { title: title.trim() });
+      onSave(moment.id, {
+        title: title.trim(),
+        notes: notesContentRef.current.trim() || undefined
+      });
       onClose();
     }
   };
 
   const handleClose = () => {
     setTitle(moment.title);
+    notesContentRef.current = moment.notes || '';
     onClose();
   };
 
@@ -44,17 +54,30 @@ export function MomentEditModal({ moment, visible, onClose, onSave }: MomentEdit
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.label}>Titre du moment</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Entrez un titre"
-            autoFocus
-            maxLength={100}
-          />
-        </View>
+        <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.section}>
+            <Text style={styles.label}>Titre du moment</Text>
+            <TextInput
+              style={styles.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Entrez un titre"
+              autoFocus
+              maxLength={100}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.label}>Notes</Text>
+            <View style={styles.editorContainer}>
+              <RichTextEditor
+                initialValue={moment.notes || ''}
+                onContentChange={handleNotesChange}
+                placeholder="Ajoutez vos notes ici..."
+              />
+            </View>
+          </View>
+        </ScrollView>
 
         <View style={styles.footer}>
           <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
@@ -95,7 +118,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 24,
+  },
+  section: {
+    marginTop: 24,
   },
   label: {
     fontSize: 14,
@@ -111,6 +136,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
     backgroundColor: Colors.background.white,
+  },
+  editorContainer: {
+    height: 400,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    borderRadius: 8,
+    backgroundColor: Colors.background.white,
+    overflow: 'hidden',
   },
   footer: {
     flexDirection: 'row',

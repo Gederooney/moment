@@ -1,106 +1,51 @@
 /**
  * RichTextEditor Component
- * Markdown-based rich text editor with floating toolbar
- * Auto-saves after 3 seconds of inactivity
+ * Based on @10play/tentap-editor official example
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { RichText, Toolbar, useEditorBridge } from '@10play/tentap-editor';
-import { debounce } from 'lodash.debounce';
+import React, { useEffect, useRef } from 'react';
+import { View, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { RichText, Toolbar, useEditorBridge, useEditorContent } from '@10play/tentap-editor';
+import { Colors } from '../../constants/Colors';
 
 interface RichTextEditorProps {
-  value: string;
-  onChange: (markdown: string) => void;
+  initialValue?: string;
+  onContentChange?: (html: string) => void;
   placeholder?: string;
-  autoFocus?: boolean;
-  darkMode?: boolean;
 }
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  value,
-  onChange,
-  placeholder = 'Add your notes here...',
-  autoFocus = true,
-  darkMode = false,
+  initialValue = '',
+  onContentChange,
+  placeholder = 'Tapez vos notes ici...',
 }) => {
   const editor = useEditorBridge({
-    autofocus: autoFocus,
+    autofocus: false,
     avoidIosKeyboard: true,
-    initialContent: value,
+    initialContent: initialValue,
   });
 
-  // Debounced auto-save (3 seconds)
-  const debouncedOnChange = useRef(
-    debounce((markdown: string) => {
-      onChange(markdown);
-    }, 3000)
-  ).current;
+  // Use the official useEditorContent hook to get content
+  const content = useEditorContent(editor, { type: 'html' });
+  const previousContentRef = useRef<string>(initialValue);
 
-  // Update content when value prop changes externally
+  // Track content changes
   useEffect(() => {
-    if (editor && value !== editor.getContent()) {
-      editor.setContent(value);
+    if (content && content !== previousContentRef.current) {
+      previousContentRef.current = content;
+      onContentChange?.(content);
     }
-  }, [value, editor]);
-
-  // Listen to editor changes
-  useEffect(() => {
-    if (!editor) return;
-
-    const unsubscribe = editor.subscribeToEditorState(() => {
-      const markdown = editor.getContent();
-      debouncedOnChange(markdown);
-    });
-
-    return () => {
-      unsubscribe();
-      debouncedOnChange.cancel();
-    };
-  }, [editor, debouncedOnChange]);
-
-  const handleBold = useCallback(() => {
-    editor?.toggleBold();
-  }, [editor]);
-
-  const handleItalic = useCallback(() => {
-    editor?.toggleItalic();
-  }, [editor]);
-
-  const handleUnderline = useCallback(() => {
-    editor?.toggleUnderline();
-  }, [editor]);
-
-  const handleBulletList = useCallback(() => {
-    editor?.toggleBulletList();
-  }, [editor]);
-
-  const handleOrderedList = useCallback(() => {
-    editor?.toggleOrderedList();
-  }, [editor]);
-
-  const handleHeading = useCallback((level: 1 | 2 | 3) => {
-    editor?.toggleHeading(level);
-  }, [editor]);
-
-  if (!editor) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={darkMode ? '#fff' : '#000'} />
-      </View>
-    );
-  }
+  }, [content, onContentChange]);
 
   return (
-    <View style={[styles.container, darkMode && styles.containerDark]}>
-      <RichText
-        editor={editor}
-        style={[styles.editor, darkMode && styles.editorDark]}
-      />
-      <Toolbar
-        editor={editor}
-        style={[styles.toolbar, darkMode && styles.toolbarDark]}
-      />
+    <View style={styles.container}>
+      <RichText editor={editor} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoid}
+      >
+        <Toolbar editor={editor} />
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -108,34 +53,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background.white,
   },
-  containerDark: {
-    backgroundColor: '#1a1a1a',
-  },
-  editor: {
-    flex: 1,
-    padding: 16,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  editorDark: {
-    color: '#fff',
-  },
-  toolbar: {
-    backgroundColor: '#f5f5f5',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  toolbarDark: {
-    backgroundColor: '#2a2a2a',
-    borderTopColor: '#404040',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  keyboardAvoid: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 0,
   },
 });

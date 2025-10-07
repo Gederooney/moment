@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+/**
+ * Folders Screen - iOS Files Style
+ * Navigate through folder hierarchy with list/grid view options
+ */
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,13 +11,17 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  RefreshControl,
   Alert,
+  FlatList,
 } from 'react-native';
 import { useFolders } from '../../hooks/useFolders';
-import { FolderTree } from '../../components/FolderTree';
-import { Breadcrumb } from '../../components/Breadcrumb';
 import { Folder } from '../../types/folder';
+import { Colors } from '../../constants/Colors';
+import { useTopBarContext } from '../../contexts/TopBarContext';
+import { FolderIcon, GridIcon, ListIcon } from '../../components/icons';
+import { Ionicons } from '@expo/vector-icons';
+
+type ViewMode = 'list' | 'grid';
 
 export default function FoldersScreen() {
   const {
@@ -26,13 +35,63 @@ export default function FoldersScreen() {
     refreshFolders,
   } = useFolders();
 
+  const { setTitle, setBackButton } = useTopBarContext();
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [isDark] = useState(false); // TODO: Get from theme context
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortAscending, setSortAscending] = useState(true);
+
+  // Get current level folders (either root or children of current folder)
+  const getCurrentLevelFolders = () => {
+    let levelFolders;
+    if (!currentFolder) {
+      // Show root folders
+      levelFolders = folders.filter(f => !f.parentFolderId);
+    } else {
+      // Show children of current folder
+      levelFolders = folders.filter(f => f.parentFolderId === currentFolder.id);
+    }
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      return levelFolders.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    return levelFolders;
+  };
+
+  const currentLevelFolders = getCurrentLevelFolders();
 
   const handleFolderPress = (folder: Folder) => {
+    // Navigate into the folder
     setCurrentFolder(folder);
   };
+
+  const handleBackPress = () => {
+    if (!currentFolder) return;
+
+    if (currentFolder.parentFolderId) {
+      // Go to parent folder
+      const parentFolder = folders.find(f => f.id === currentFolder.parentFolderId);
+      setCurrentFolder(parentFolder || null);
+    } else {
+      // Go to root
+      setCurrentFolder(null);
+    }
+  };
+
+  // Update TopBar based on current folder state
+  useEffect(() => {
+    if (currentFolder) {
+      // Show folder name and back button
+      setTitle(currentFolder.name);
+      setBackButton(true, handleBackPress);
+    } else {
+      // At root level
+      setTitle('Dossiers');
+      setBackButton(false);
+    }
+  }, [currentFolder, setTitle, setBackButton]);
 
   const handleFolderLongPress = (folder: Folder) => {
     Alert.alert(folder.name, 'Choisissez une action', [
@@ -71,51 +130,128 @@ export default function FoldersScreen() {
     }
   };
 
-  const handleBreadcrumbNavigate = (index: number) => {
-    const path = getFolderPath(currentFolder?.id || '');
-    if (index === 0) {
-      setCurrentFolder(null);
-    } else {
-      const targetFolderName = path[index];
-      const targetFolder = folders.find(f => f.name === targetFolderName);
-      if (targetFolder) {
-        setCurrentFolder(targetFolder);
-      }
+  const renderFolderItem = ({ item }: { item: Folder }) => {
+    // Calculate total items (folder items + subfolders)
+    const totalItems = item.items.length + item.subFolderIds.length;
+
+    if (viewMode === 'grid') {
+      return (
+        <TouchableOpacity
+          style={styles.gridItem}
+          onPress={() => handleFolderPress(item)}
+          onLongPress={() => handleFolderLongPress(item)}
+        >
+          <View style={styles.gridIconContainer}>
+            <FolderIcon size={48} color={Colors.primary} focused={false} />
+          </View>
+          <Text style={styles.gridLabel} numberOfLines={2}>
+            {item.name}
+          </Text>
+        </TouchableOpacity>
+      );
     }
-  };
 
-  const breadcrumbPath = currentFolder
-    ? ['Accueil', ...getFolderPath(currentFolder.id)]
-    : ['Accueil'];
-
-  return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
-      {/* Breadcrumb */}
-      <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} darkMode={isDark} />
-
-      {/* Folder Tree */}
-      {folders.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, isDark && styles.emptyTextDark]}>Aucun dossier</Text>
-          <Text style={[styles.emptySubtext, isDark && styles.emptySubtextDark]}>
-            Appuyez sur le bouton + pour créer votre premier dossier
+    // List view
+    return (
+      <TouchableOpacity
+        style={styles.listItem}
+        onPress={() => handleFolderPress(item)}
+        onLongPress={() => handleFolderLongPress(item)}
+      >
+        <View style={styles.listIconContainer}>
+          <FolderIcon size={32} color={Colors.primary} focused={false} />
+        </View>
+        <View style={styles.listInfo}>
+          <Text style={styles.listTitle}>{item.name}</Text>
+          <Text style={styles.listSubtitle}>
+            {totalItems} élément{totalItems !== 1 ? 's' : ''}
           </Text>
         </View>
+        <Text style={styles.chevron}>›</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher dans les dossiers"
+          placeholderTextColor={Colors.text.secondary}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          clearButtonMode="while-editing"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+      </View>
+
+      {/* View Toggle Controls */}
+      <View style={styles.controls}>
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.viewButton, viewMode === 'list' && styles.viewButtonActive]}
+            onPress={() => setViewMode('list')}
+          >
+            <ListIcon
+              size={18}
+              color={viewMode === 'list' ? Colors.primary : Colors.text.secondary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewButton, viewMode === 'grid' && styles.viewButtonActive]}
+            onPress={() => setViewMode('grid')}
+          >
+            <GridIcon
+              size={20}
+              color={viewMode === 'grid' ? Colors.primary : Colors.text.secondary}
+            />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity
+          style={styles.sortButton}
+          onPress={() => setSortAscending(!sortAscending)}
+        >
+          <Text style={styles.sortText}>Date</Text>
+          <Ionicons
+            name={sortAscending ? 'arrow-up' : 'arrow-down'}
+            size={16}
+            color={Colors.text.secondary}
+            style={styles.sortIcon}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {currentLevelFolders.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>Aucun dossier</Text>
+          <Text style={styles.emptySubtext}>Appuyez sur + pour créer un dossier</Text>
+        </View>
+      ) : viewMode === 'grid' ? (
+        <FlatList
+          key="grid-view"
+          data={currentLevelFolders}
+          renderItem={renderFolderItem}
+          keyExtractor={item => item.id}
+          numColumns={3}
+          contentContainerStyle={styles.gridContainer}
+        />
       ) : (
-        <FolderTree
-          folders={folders}
-          onFolderPress={handleFolderPress}
-          onFolderLongPress={handleFolderLongPress}
-          selectedFolderId={currentFolder?.id}
-          darkMode={isDark}
+        <FlatList
+          key="list-view"
+          data={currentLevelFolders}
+          renderItem={renderFolderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
         />
       )}
 
       {/* FAB - Create Folder */}
-      <TouchableOpacity
-        style={[styles.fab, isDark && styles.fabDark]}
-        onPress={() => setShowCreateModal(true)}
-      >
+      <TouchableOpacity style={styles.fab} onPress={() => setShowCreateModal(true)}>
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
 
@@ -127,26 +263,20 @@ export default function FoldersScreen() {
         onRequestClose={() => setShowCreateModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
-            <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
-              Nouveau dossier
-            </Text>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Nouveau dossier</Text>
 
             <TextInput
               value={newFolderName}
               onChangeText={setNewFolderName}
               placeholder="Nom du dossier..."
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              style={[styles.input, isDark && styles.inputDark]}
+              placeholderTextColor="#999"
+              style={styles.input}
               autoFocus
               onSubmitEditing={handleCreateFolder}
             />
 
-            {currentFolder && (
-              <Text style={[styles.parentInfo, isDark && styles.parentInfoDark]}>
-                dans {currentFolder.name}
-              </Text>
-            )}
+            {currentFolder && <Text style={styles.parentInfo}>dans {currentFolder.name}</Text>}
 
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -176,10 +306,122 @@ export default function FoldersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background.white,
   },
-  containerDark: {
-    backgroundColor: '#1a1a1a',
+  searchContainer: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  searchInput: {
+    height: 48,
+    backgroundColor: Colors.background.secondary,
+    borderWidth: 1,
+    borderColor: Colors.border.light,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: Colors.text.primary,
+  },
+  controls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.background.white,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.light,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background.tertiary,
+    borderRadius: 8,
+    padding: 0,
+  },
+  viewButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  viewButtonActive: {
+    backgroundColor: Colors.background.white,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  sortText: {
+    fontSize: 15,
+    color: Colors.primary,
+  },
+  sortIcon: {
+    marginLeft: 2,
+  },
+  listContainer: {
+    padding: 16,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.light,
+  },
+  listIconContainer: {
+    width: 40,
+    height: 40,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listIcon: {
+    fontSize: 32,
+  },
+  listInfo: {
+    flex: 1,
+  },
+  listTitle: {
+    fontSize: 17,
+    fontWeight: '400',
+    color: Colors.text.primary,
+    marginBottom: 2,
+  },
+  listSubtitle: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  chevron: {
+    fontSize: 24,
+    color: Colors.text.tertiary,
+    fontWeight: '300',
+  },
+  gridContainer: {
+    padding: 16,
+  },
+  gridItem: {
+    width: '31%',
+    marginRight: '3.5%',
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  gridIconContainer: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  gridIcon: {
+    fontSize: 56,
+  },
+  gridLabel: {
+    fontSize: 13,
+    color: Colors.text.primary,
+    textAlign: 'center',
   },
   emptyState: {
     flex: 1,
@@ -187,21 +429,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyText: {
-    fontSize: 24,
-    color: '#333',
-    marginBottom: 8,
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
   },
-  emptyTextDark: {
-    color: '#e0e0e0',
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text.primary,
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.text.secondary,
     textAlign: 'center',
-  },
-  emptySubtextDark: {
-    color: '#999',
   },
   fab: {
     position: 'absolute',
@@ -210,7 +451,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1976d2',
+    backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
@@ -219,13 +460,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
-  fabDark: {
-    backgroundColor: '#64b5f6',
-  },
   fabIcon: {
     fontSize: 28,
     color: '#fff',
-    fontWeight: 'bold',
+    fontWeight: '300',
   },
   modalOverlay: {
     flex: 1,
@@ -241,21 +479,15 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
-  modalContentDark: {
-    backgroundColor: '#2a2a2a',
-  },
   modalTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: Colors.text.primary,
     marginBottom: 16,
-  },
-  modalTitleDark: {
-    color: '#e0e0e0',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border.light,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -263,18 +495,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginBottom: 8,
   },
-  inputDark: {
-    backgroundColor: '#1a1a1a',
-    borderColor: '#404040',
-    color: '#fff',
-  },
   parentInfo: {
     fontSize: 14,
-    color: '#666',
+    color: Colors.text.secondary,
     marginBottom: 16,
-  },
-  parentInfoDark: {
-    color: '#999',
   },
   modalActions: {
     flexDirection: 'row',
@@ -287,15 +511,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background.tertiary,
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.text.secondary,
   },
   createButton: {
-    backgroundColor: '#1976d2',
+    backgroundColor: Colors.primary,
   },
   createButtonText: {
     fontSize: 16,
