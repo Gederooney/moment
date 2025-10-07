@@ -22,7 +22,6 @@ import { useTopBarContext } from '../../contexts/TopBarContext';
 import { FolderIcon, GridIcon, ListIcon } from '../../components/icons';
 import { Ionicons } from '@expo/vector-icons';
 import { FolderMomentItem } from '../../components/FolderMomentItem';
-import { MomentEditModal } from '../../components/moments/MomentEditModal';
 import { useMomentsContext } from '../../contexts/MomentsContext';
 import { useRouter } from 'expo-router';
 import { CapturedMoment } from '../../types/moment';
@@ -42,7 +41,7 @@ export default function FoldersScreen() {
     removeItemFromFolder,
   } = useFolders();
 
-  const { getAllMoments, updateMoment } = useMomentsContext();
+  const { getAllMoments } = useMomentsContext();
   const router = useRouter();
   const { setTitle, setBackButton } = useTopBarContext();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -50,7 +49,6 @@ export default function FoldersScreen() {
   const [newFolderName, setNewFolderName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAscending, setSortAscending] = useState(true);
-  const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
 
   // Get current level folders (either root or children of current folder)
   const getCurrentLevelFolders = () => {
@@ -110,15 +108,6 @@ export default function FoldersScreen() {
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de retirer le moment du dossier');
     }
-  };
-
-  const handleEditMoment = (moment: CapturedMoment) => {
-    setEditingMoment(moment);
-  };
-
-  const handleSaveMoment = (momentId: string, updates: Partial<CapturedMoment>) => {
-    updateMoment(momentId, updates);
-    setEditingMoment(null);
   };
 
   const handleBackPress = () => {
@@ -320,7 +309,6 @@ export default function FoldersScreen() {
                   moment={moment}
                   onPlay={() => handlePlayMoment(moment)}
                   onRemoveFromFolder={() => handleRemoveMomentFromFolder(moment)}
-                  onEdit={() => handleEditMoment(moment)}
                 />
               ))}
             </View>
@@ -392,16 +380,6 @@ export default function FoldersScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Edit Moment Modal */}
-      {editingMoment && (
-        <MomentEditModal
-          moment={editingMoment}
-          visible={!!editingMoment}
-          onClose={() => setEditingMoment(null)}
-          onSave={handleSaveMoment}
-        />
-      )}
     </View>
   );
 }
@@ -521,7 +499,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.secondary,
   },
   momentsContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingTop: 12,
   },
   gridContainer: {
