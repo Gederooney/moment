@@ -1,5 +1,5 @@
 /**
- * PodCut Design System - Colors
+ * Moments Design System - Colors
  * Optimized for driving safety and YouTube familiarity
  * Supports both light and dark themes
  */

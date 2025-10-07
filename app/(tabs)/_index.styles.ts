@@ -32,6 +32,21 @@ export const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
 
+  // Tabs minimalistes
+  tabsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 24,
+  },
+  tabButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // Section CTA - Wireframe
   ctaContainer: {
     marginBottom: 24,
@@ -170,5 +185,79 @@ export const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+
+  // Spotify/SoundCloud content
+  sourceContent: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+
+  // Section header
+  sectionHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  // Instructions
+  instructionsContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginTop: 20,
+  },
+  instructionText: {
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+
+  // Spotify/SoundCloud non connectés
+  notConnectedContainer: {
+    flex: 1,
+    alignItems: 'center',
+    paddingTop: 40,
+    paddingHorizontal: 20,
+  },
+  notConnectedText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+  },
+  connectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Quick Access Spotify/SoundCloud
+  quickAccessSection: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  quickAccessItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 12,
+  },
+  quickAccessItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  quickAccessItemText: {
+    fontSize: 15,
   },
 });

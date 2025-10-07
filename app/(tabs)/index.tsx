@@ -16,6 +16,8 @@ export default function HomeScreen() {
   const [error, setError] = useState<string>('');
   const [isLoadingVideo, setIsLoadingVideo] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  // Simplifié - seulement YouTube pour l'instant
+  const activeSource = 'youtube';
 
   const colors = getColors(isDark);
 
@@ -41,16 +43,17 @@ export default function HomeScreen() {
       router.push({
         pathname: '/player',
         params: {
+          source: activeSource,
           videoId: extractedVideoId,
           title: metadata.title,
-          author: metadata.author_name,
+          artist: metadata.author_name,
           thumbnail: metadata.thumbnail_url,
           url: url,
           isFromApi: metadata.isFromApi.toString(),
         },
       });
     },
-    [router]
+    [router, activeSource]
   );
 
   const handleNavigateToPlayer = useCallback(

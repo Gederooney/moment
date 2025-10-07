@@ -14,11 +14,22 @@ import { DurationPicker } from '../../components/DurationPicker';
 import { formatDuration } from '../../utils/storage';
 import { SpotifyIcon } from '../../components/icons/SpotifyIcon';
 import { AppleMusicIcon } from '../../components/icons/AppleMusicIcon';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function SettingsScreen() {
   const { settings, isLoading, updateSetting } = useSettings();
   const { setTitle, clearVideoState } = useTopBarContext();
   const { clearAllHistory, refreshMoments } = useMomentsContext();
+  const {
+    isRestoring,
+    isSpotifyAuthenticated,
+    isSoundCloudAuthenticated,
+    loginSpotify,
+    loginSoundCloud,
+    logout,
+    spotifyUser,
+    soundCloudUser
+  } = useAuth();
 
   const [showDurationPicker, setShowDurationPicker] = useState(false);
 
@@ -87,23 +98,93 @@ export default function SettingsScreen() {
           <SettingItem
             icon={<SpotifyIcon size={20} color={Colors.text.secondary} />}
             title="Spotify"
-            subtitle="Connecter votre compte Spotify"
+            subtitle={
+              isRestoring
+                ? 'Chargement...'
+                : isSpotifyAuthenticated && spotifyUser
+                  ? `Connecté: ${spotifyUser.display_name || spotifyUser.email}`
+                  : isSpotifyAuthenticated
+                    ? 'Connecté'
+                    : 'Connecter votre compte Spotify'
+            }
             type="action"
-            onPress={() => Alert.alert('Spotify', 'Connexion à venir')}
+            disabled={isRestoring}
+            onPress={async () => {
+              // Empêcher le clic pendant la restauration
+              if (isRestoring) {
+                return;
+              }
+
+              if (isSpotifyAuthenticated) {
+                Alert.alert(
+                  'Déconnexion',
+                  'Voulez-vous vous déconnecter de Spotify?',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                      text: 'Déconnecter',
+                      style: 'destructive',
+                      onPress: () => logout('spotify')
+                    }
+                  ]
+                );
+              } else {
+                try {
+                  await loginSpotify();
+                } catch (error) {
+                  Alert.alert('Erreur', 'Impossible de se connecter à Spotify');
+                }
+              }
+            }}
           />
           <SettingItem
             icon={<AppleMusicIcon size={20} color={Colors.text.secondary} />}
             title="Apple Music"
-            subtitle="Connecter votre compte Apple Music"
+            subtitle="Bientôt disponible"
             type="action"
-            onPress={() => Alert.alert('Apple Music', 'Connexion à venir')}
+            onPress={() => Alert.alert('Apple Music', 'Bientôt disponible')}
           />
           <SettingItem
             icon="cloud"
             title="SoundCloud"
-            subtitle="Connecter votre compte SoundCloud"
+            subtitle={
+              isRestoring
+                ? 'Chargement...'
+                : isSoundCloudAuthenticated && soundCloudUser
+                  ? `Connecté: ${soundCloudUser.username}`
+                  : isSoundCloudAuthenticated
+                    ? 'Connecté'
+                    : 'Connecter votre compte SoundCloud'
+            }
             type="action"
-            onPress={() => Alert.alert('SoundCloud', 'Connexion à venir')}
+            disabled={isRestoring}
+            onPress={async () => {
+              // Empêcher le clic pendant la restauration
+              if (isRestoring) {
+                return;
+              }
+
+              if (isSoundCloudAuthenticated) {
+                Alert.alert(
+                  'Déconnexion',
+                  'Voulez-vous vous déconnecter de SoundCloud?',
+                  [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                      text: 'Déconnecter',
+                      style: 'destructive',
+                      onPress: () => logout('soundcloud')
+                    }
+                  ]
+                );
+              } else {
+                try {
+                  await loginSoundCloud();
+                } catch (error) {
+                  Alert.alert('Erreur', 'Impossible de se connecter à SoundCloud');
+                }
+              }
+            }}
           />
         </SettingSection>
 

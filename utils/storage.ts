@@ -2,6 +2,35 @@
  * Utilities for storage calculation and management
  */
 
+/**
+ * Schema version for data migrations
+ * Increment this when making breaking changes to data structures
+ *
+ * Version history:
+ * - v1: Original CapturedMoment format
+ * - v2: New Moment types (youtube_timestamp, screen_recording) with notes and tags
+ */
+export const SCHEMA_VERSION = 2;
+
+/**
+ * AsyncStorage keys for the application
+ */
+export const STORAGE_KEYS = {
+  // Legacy keys (v1)
+  MOMENTS_V1: '@podcut_moments',
+
+  // New keys (v2)
+  MOMENTS_V2: '@podcut_moments_v2',
+  FOLDERS: '@podcut_folders',
+  SCREEN_RECORDINGS: '@podcut_screen_recordings',
+  SCHEMA_VERSION: '@podcut_schema_version',
+
+  // Existing keys (keep as is)
+  PLAYLISTS: '@podcut_playlists',
+  ACTIVE_PLAYLIST_ID: '@podcut_active_playlist_id',
+  SETTINGS: '@podcut_settings',
+} as const;
+
 export const formatBytes = (bytes: number, decimals: number = 2): string => {
   if (bytes === 0) return '0 B';
 

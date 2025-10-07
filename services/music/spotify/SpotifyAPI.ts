@@ -19,11 +19,20 @@ const BASE_URL = 'https://api.spotify.com/v1';
 
 export class SpotifyAPI {
   private static client: AxiosInstance;
+  private static initialized = false;
+
+  /**
+   * Check if API is initialized
+   */
+  static isInitialized(): boolean {
+    return this.initialized;
+  }
 
   /**
    * Initialise le client HTTP avec intercepteurs
    */
   static initialize() {
+    this.initialized = true;
     this.client = axios.create({
       baseURL: BASE_URL,
       headers: { 'Content-Type': 'application/json' },
@@ -75,11 +84,40 @@ export class SpotifyAPI {
         }
 
         if (error.response?.status === 401) {
-          Logger.error(CONTEXT, 'Unauthorized - clearing tokens');
-          await SecureStorage.deleteTokens('spotify');
+          Logger.error(CONTEXT, 'Unauthorized - refreshing token');
+          const tokens = await SecureStorage.getTokens('spotify');
+          if (tokens?.refreshToken) {
+            try {
+              const newTokens = await SpotifyAuth.refreshToken(tokens.refreshToken);
+              await SecureStorage.saveTokens('spotify', newTokens);
+              // Retry the original request with new token
+              error.config!.headers.Authorization = `Bearer ${newTokens.accessToken}`;
+              return this.client.request(error.config!);
+            } catch (refreshError) {
+              Logger.error(CONTEXT, 'Token refresh failed - clearing tokens');
+              await SecureStorage.deleteTokens('spotify');
+              throw new MusicServiceError(
+                'Authentication failed',
+                'AUTH_FAILED',
+                'spotify'
+              );
+            }
+          } else {
+            await SecureStorage.deleteTokens('spotify');
+            throw new MusicServiceError(
+              'Unauthorized',
+              'UNAUTHORIZED',
+              'spotify'
+            );
+          }
+        }
+
+        if (error.response?.status === 403) {
+          Logger.warn(CONTEXT, 'Forbidden - endpoint restricted for new apps');
+          // Don't delete tokens - just return error for this specific request
           throw new MusicServiceError(
-            'Unauthorized',
-            'UNAUTHORIZED',
+            'Endpoint restricted',
+            'FORBIDDEN',
             'spotify'
           );
         }
@@ -145,6 +183,45 @@ export class SpotifyAPI {
   }
 
   /**
+   * Récupère les playlists de l'utilisateur
+   */
+  static async getUserPlaylists(limit: number = 50, offset: number = 0): Promise<any> {
+    try {
+      const response = await this.client.get('/me/playlists', {
+        params: { limit, offset },
+      });
+      Logger.info(CONTEXT, 'Playlists retrieved', {
+        count: response.data.items?.length,
+        total: response.data.total,
+      });
+      return response.data;
+    } catch (error) {
+      Logger.error(CONTEXT, 'Failed to get playlists', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Récupère les tracks d'une playlist
+   */
+  static async getPlaylistTracks(playlistId: string, limit: number = 50, offset: number = 0): Promise<any> {
+    try {
+      const response = await this.client.get(`/playlists/${playlistId}/tracks`, {
+        params: { limit, offset },
+      });
+      Logger.info(CONTEXT, 'Playlist tracks retrieved', {
+        playlistId,
+        count: response.data.items?.length,
+        total: response.data.total,
+      });
+      return response.data;
+    } catch (error) {
+      Logger.error(CONTEXT, 'Failed to get playlist tracks', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Convertit un SpotifyTrack en MusicTrack
    */
   private static mapTrack(track: SpotifyTrack): MusicTrack {
@@ -157,5 +234,31 @@ export class SpotifyAPI {
       uri: track.uri,
       source: 'spotify',
     };
+  }
+
+  /**
+   * Gère les erreurs Spotify
+   */
+  private static handleError(error: any): MusicServiceError {
+    if (error.response?.status === 401) {
+      return new MusicServiceError(
+        'Not authenticated',
+        'NOT_AUTHENTICATED',
+        'spotify'
+      );
+    }
+    if (error.response?.status === 429) {
+      return new MusicServiceError(
+        'Rate limited',
+        'RATE_LIMITED',
+        'spotify'
+      );
+    }
+    return new MusicServiceError(
+      error.message || 'Unknown error',
+      'UNKNOWN',
+      'spotify',
+      error
+    );
   }
 }

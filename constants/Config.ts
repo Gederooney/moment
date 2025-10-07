@@ -1,6 +1,8 @@
+import env from '../config/environment';
+
 export const Config = {
-  // API Configuration
-  API_BASE_URL: __DEV__ ? 'http://localhost:3000/api' : 'https://your-production-api.com/api',
+  // API Configuration - uses environment variables
+  API_BASE_URL: `${env.API_URL}/api`,
 
   // YouTube URL patterns
   YOUTUBE_URL_PATTERNS: [

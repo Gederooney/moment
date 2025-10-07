@@ -4,12 +4,17 @@
 
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
+import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import axios from 'axios';
 import { Logger } from '../../logger/Logger';
 import { SecureStorage } from '../common/SecureStorage';
 import { OAuthTokens, MusicServiceError } from '../common/types';
 import { SpotifyTokenResponse } from './types';
+import env from '../../../config/environment';
+
+// CRITICAL: This allows expo-auth-session to automatically close the WebView
+WebBrowser.maybeCompleteAuthSession();
 
 const CONTEXT = 'SpotifyAuth';
 
@@ -25,6 +30,9 @@ export class SpotifyAuth {
     'streaming',
     'user-modify-playback-state',
     'user-read-playback-state',
+    'playlist-read-private',
+    'playlist-read-collaborative',
+    'user-library-read',
   ];
 
   /**
@@ -45,10 +53,9 @@ export class SpotifyAuth {
    */
   private static async generateCodeVerifier(): Promise<string> {
     const randomBytes = await Crypto.getRandomBytesAsync(32);
-    const base64 = Crypto.digest(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      randomBytes
-    );
+    // Convert Uint8Array to base64 using native JS
+    const base64 = btoa(String.fromCharCode(...randomBytes));
+    // Convert to base64url format
     return base64
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
@@ -88,22 +95,38 @@ export class SpotifyAuth {
       const codeVerifier = await this.generateCodeVerifier();
       const codeChallenge = await this.generateCodeChallenge(codeVerifier);
 
-      // Configuration de la requête OAuth
-      const discovery = {
-        authorizationEndpoint: SPOTIFY_AUTH_ENDPOINT,
-        tokenEndpoint: SPOTIFY_TOKEN_ENDPOINT,
-      };
+      // Save code verifier for later use
+      // Store temporarily in memory (could also use SecureStore)
+      (global as any).__spotify_code_verifier = codeVerifier;
 
-      const request = new AuthSession.AuthRequest({
-        clientId: this.clientId,
-        redirectUri: this.redirectUri,
-        scopes: this.scopes,
-        usePKCE: true,
-        codeChallenge,
-        codeChallengeMethod: AuthSession.CodeChallengeMethod.S256,
-      });
+      // Build authorization URL manually
+      const authUrl = new URL(SPOTIFY_AUTH_ENDPOINT);
+      authUrl.searchParams.set('client_id', this.clientId);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', this.redirectUri);
+      authUrl.searchParams.set('scope', this.scopes.join(' '));
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
 
-      const result = await request.promptAsync(discovery);
+      // Generate state for security
+      const state = await this.generateCodeVerifier();
+      authUrl.searchParams.set('state', state);
+
+      Logger.info(CONTEXT, 'Opening auth session', { url: authUrl.toString() });
+
+      // Use WebBrowser.openAuthSessionAsync instead of AuthRequest
+      // IMPORTANT: The second parameter should be the FINAL redirect URL
+      // Dynamically determine the redirect URL based on environment
+      const finalRedirectUrl = __DEV__
+        ? env.EXPO_REDIRECT_URI  // Use environment variable for dev
+        : this.redirectUri;       // Use configured redirect URI for production
+
+      Logger.info(CONTEXT, 'Expecting final redirect to:', finalRedirectUrl);
+
+      const result = await WebBrowser.openAuthSessionAsync(
+        authUrl.toString(),
+        finalRedirectUrl
+      );
 
       if (result.type !== 'success') {
         throw new MusicServiceError(
@@ -113,11 +136,43 @@ export class SpotifyAuth {
         );
       }
 
+      // Parse the callback URL to get the code
+      const callbackUrl = new URL(result.url);
+      const code = callbackUrl.searchParams.get('code');
+      const returnedState = callbackUrl.searchParams.get('state');
+      const error = callbackUrl.searchParams.get('error');
+
+      if (error) {
+        throw new MusicServiceError(
+          `Authentication error: ${error}`,
+          'AUTH_ERROR',
+          'spotify'
+        );
+      }
+
+      if (!code) {
+        throw new MusicServiceError(
+          'No authorization code received',
+          'NO_CODE',
+          'spotify'
+        );
+      }
+
+      // Retrieve code verifier
+      const savedVerifier = (global as any).__spotify_code_verifier;
+      if (!savedVerifier) {
+        throw new MusicServiceError(
+          'Code verifier lost',
+          'VERIFIER_LOST',
+          'spotify'
+        );
+      }
+
       // Échange du code contre des tokens
-      const tokens = await this.exchangeCodeForTokens(
-        result.params.code,
-        codeVerifier
-      );
+      const tokens = await this.exchangeCodeForTokens(code, savedVerifier);
+
+      // Clean up
+      delete (global as any).__spotify_code_verifier;
 
       await SecureStorage.saveTokens('spotify', tokens);
       Logger.info(CONTEXT, 'Login successful');

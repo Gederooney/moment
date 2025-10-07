@@ -7,9 +7,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { MomentsProvider } from '../contexts/MomentsContext';
 import { TopBarProvider } from '../contexts/TopBarContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
+import { AuthProvider } from '../contexts/AuthContext';
 import { TopBar } from '../components/TopBar';
 import { View, StyleSheet } from 'react-native';
 import { cleanupMetadataCache } from '../services/youtubeMetadata';
+import { MigrationService } from '../services/migrationService';
 
 // Main App Content
 function MainApp() {
@@ -35,9 +37,19 @@ function AppContent() {
   const prepare = useCallback(async () => {
     try {
       await SplashScreen.preventAutoHideAsync();
+
+      // Run data migrations if needed
+      const needsMigration = await MigrationService.needsMigration();
+      if (needsMigration) {
+        console.log('[App] Running data migrations...');
+        await MigrationService.runMigrations();
+        console.log('[App] Migrations complete');
+      }
+
       await cleanupMetadataCache();
     } catch (e) {
-      // Handle error silently
+      console.error('[App] Error during app initialization:', e);
+      // Handle error silently but log it
     } finally {
       setIsReady(true);
       await SplashScreen.hideAsync();
@@ -53,13 +65,15 @@ function AppContent() {
   }
 
   return (
-    <TopBarProvider>
-      <MomentsProvider>
-        <PlaylistProvider>
-          <MainApp />
-        </PlaylistProvider>
-      </MomentsProvider>
-    </TopBarProvider>
+    <AuthProvider autoRefresh={true}>
+      <TopBarProvider>
+        <MomentsProvider>
+          <PlaylistProvider>
+            <MainApp />
+          </PlaylistProvider>
+        </MomentsProvider>
+      </TopBarProvider>
+    </AuthProvider>
   );
 }
 
