@@ -14,6 +14,21 @@ jest.mock('react-native', () => ({
   Button: 'Button',
   Alert: { alert: jest.fn() },
   Keyboard: { dismiss: jest.fn() },
+  Animated: {
+    Value: jest.fn(() => ({
+      interpolate: jest.fn(),
+      setValue: jest.fn(),
+    })),
+    timing: jest.fn(() => ({
+      start: jest.fn((callback) => callback && callback()),
+    })),
+    spring: jest.fn(() => ({
+      start: jest.fn((callback) => callback && callback()),
+    })),
+    sequence: jest.fn(),
+    parallel: jest.fn(),
+    loop: jest.fn(),
+  },
 }));
 
 // Mock AsyncStorage for testing
