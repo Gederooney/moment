@@ -5,11 +5,25 @@ import { Colors } from '../../../constants/Colors';
 
 interface MomentsHeaderProps {
   onAddVideo: () => void;
+  onExport?: () => void;
+  hasExportableMoments?: boolean;
 }
 
-export function MomentsHeader({ onAddVideo }: MomentsHeaderProps) {
+export function MomentsHeader({ onAddVideo, onExport, hasExportableMoments = false }: MomentsHeaderProps) {
   return (
     <View style={styles.header}>
+      {/* Export button */}
+      {hasExportableMoments && onExport && (
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={onExport}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="share-outline" size={20} color={Colors.text.secondary} />
+          <Text style={styles.exportText}>Export</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Bouton floating "Nouveau" - Wireframe 3 */}
       <TouchableOpacity
         style={styles.floatingButton}
@@ -29,10 +43,24 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: Colors.background.secondary,
+  },
+  exportText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.text.secondary,
   },
   floatingButton: {
     flexDirection: 'row',

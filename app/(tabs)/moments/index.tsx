@@ -14,8 +14,10 @@ import { MomentsModal } from './_MomentsModal';
 import { MomentsLoadingState } from './_MomentsLoadingState';
 import { MomentsList } from './_MomentsList';
 import { TagFilterChips } from '../../../components/TagFilterChips';
+import { ExportModal } from '../../../components/ExportModal';
 
 export default function MomentsScreen() {
+  const [showExportModal, setShowExportModal] = React.useState(false);
   const {
     videos,
     isLoading,
@@ -87,9 +89,17 @@ export default function MomentsScreen() {
     return <MomentsLoadingState />;
   }
 
+  // Get all moments for export
+  const allMoments = filteredVideos.flatMap(video => video.moments);
+  const hasExportableMoments = allMoments.length > 0;
+
   return (
     <View style={styles.container}>
-      <MomentsHeader onAddVideo={showAddVideoModal} />
+      <MomentsHeader
+        onAddVideo={showAddVideoModal}
+        onExport={() => setShowExportModal(true)}
+        hasExportableMoments={hasExportableMoments}
+      />
 
       <MomentsSearchBar
         searchQuery={searchQuery}
@@ -135,6 +145,13 @@ export default function MomentsScreen() {
         onChangeUrl={setVideoUrl}
         onClose={hideAddVideoModal}
         onSubmit={handleAddVideo}
+      />
+
+      <ExportModal
+        visible={showExportModal}
+        moments={allMoments}
+        videoTitle={filteredVideos.length === 1 ? filteredVideos[0].title : undefined}
+        onClose={() => setShowExportModal(false)}
       />
     </View>
   );
