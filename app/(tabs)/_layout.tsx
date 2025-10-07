@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Colors } from '../../constants/Colors';
-import { HomeIcon, ListIcon, SettingsIcon } from '../../components/icons';
+import { HomeIcon, ListIcon, FolderIcon, SettingsIcon } from '../../components/icons';
 
 export default function TabsLayout() {
   return (
@@ -39,6 +39,15 @@ export default function TabsLayout() {
           title: 'Moments',
           tabBarIcon: ({ focused, color, size }) => (
             <ListIcon size={size} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="folders"
+        options={{
+          title: 'Dossiers',
+          tabBarIcon: ({ focused, color, size }) => (
+            <FolderIcon size={size} color={color} focused={focused} />
           ),
         }}
       />

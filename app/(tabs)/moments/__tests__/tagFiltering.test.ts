@@ -3,6 +3,8 @@
  * Coverage: multi-tag filtering with AND logic
  */
 
+/// <reference types="jest" />
+
 import { TagService } from '../../../../services/tagService';
 import { MomentStorage } from '../../../../services/momentStorage';
 import { YouTubeMoment } from '../../../../types/moment';
