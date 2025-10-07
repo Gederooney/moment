@@ -49,7 +49,7 @@ export default function SplashScreen() {
         ]}
       >
         <Text style={styles.subtitle}>Revivez les séquences de vos videos</Text>
-        <Text style={styles.title}>Moments</Text>
+        <Text style={styles.title}>TapStampr</Text>
       </Animated.View>
     </LinearGradient>
   );

@@ -37,9 +37,7 @@ export default function TabsLayout() {
         name="moments"
         options={{
           title: 'Moments',
-          tabBarIcon: ({ focused, color, size }) => (
-            <ListIcon size={size} color={color} focused={focused} />
-          ),
+          tabBarIcon: ({ focused, color, size }) => <ListIcon size={size} color={color} />,
         }}
       />
       <Tabs.Screen

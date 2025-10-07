@@ -4,7 +4,8 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useMomentsContext } from '../../../contexts/MomentsContext';
 import { useTopBarContext } from '../../../contexts/TopBarContext';
 import { fetchYouTubeMetadataWithFallback } from '../../../services/youtubeMetadata';
-import { extractVideoId, isValidYouTubeUrl, normalizeYouTubeUrl } from '../../../utils/youtube';
+import { extractVideoId, normalizeYouTubeUrl } from '../../../utils/youtube';
+import { isValidVideoUrl, parseVideoUrl } from '../../../utils/videoUrl';
 import { TagService } from '../../../services/tagService';
 import { VideoWithMoments } from '../../../types/moment';
 
@@ -123,7 +124,7 @@ export function useMomentsScreen() {
   }
 
   useEffect(() => {
-    setIsUrlValid(isValidYouTubeUrl(videoUrl));
+    setIsUrlValid(isValidVideoUrl(videoUrl));
   }, [videoUrl]);
 
   useEffect(() => {
@@ -275,22 +276,39 @@ export function useMomentsScreen() {
 
   const processVideoUrl = useCallback(
     async (url: string): Promise<ProcessedVideoResult | null> => {
-      const normalizedUrl = normalizeYouTubeUrl(url);
-      const videoId = extractVideoId(normalizedUrl);
+      // Parse URL to detect platform
+      const videoInfo = parseVideoUrl(url);
 
-      if (!videoId) {
+      if (!videoInfo) {
         Alert.alert('Erreur',
-          "Impossible d'extraire l'ID de la vidéo."
+          "Impossible d'extraire l'ID de la vidéo ou plateforme non supportée."
         );
         return null;
       }
 
-      const metadata = await fetchYouTubeMetadataWithFallback(
-        normalizedUrl,
-        videoId
-      );
+      // For YouTube, fetch metadata from API
+      // For other platforms, use basic metadata
+      let metadata;
+      if (videoInfo.platform === 'youtube') {
+        metadata = await fetchYouTubeMetadataWithFallback(
+          videoInfo.normalizedUrl,
+          videoInfo.videoId
+        );
+      } else {
+        // For Vimeo and Twitch, use basic metadata (can be enhanced later)
+        metadata = {
+          title: `${videoInfo.platform === 'vimeo' ? 'Vidéo Vimeo' : 'Vidéo Twitch'} ${videoInfo.videoId}`,
+          author_name: videoInfo.platform === 'vimeo' ? 'Vimeo' : 'Twitch',
+          thumbnail_url: '', // Will be handled by player
+          isFromApi: false,
+        };
+      }
 
-      return { videoId, normalizedUrl, metadata };
+      return {
+        videoId: videoInfo.videoId,
+        normalizedUrl: videoInfo.normalizedUrl,
+        metadata
+      };
     },
     []
   );

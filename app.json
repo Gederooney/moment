@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Moments",
-    "slug": "moments",
+    "name": "TapStampr",
+    "slug": "tapstampr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

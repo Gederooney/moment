@@ -136,11 +136,11 @@ export function ExportModal({
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose}>
             <Text style={[styles.headerButton, darkMode && styles.headerButtonDark]}>
-              Cancel
+              Annuler
             </Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, darkMode && styles.headerTitleDark]}>
-            Export Moments
+            Exporter
           </Text>
           <View style={styles.headerSpacer} />
         </View>

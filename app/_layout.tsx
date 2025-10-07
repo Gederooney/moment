@@ -20,7 +20,7 @@ function MainApp() {
     <>
       <StatusBar style="auto" />
       <View style={styles.container}>
-        <TopBar title="Moments" />
+        <TopBar title="TapStampr" />
         <View style={styles.stackContainer}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
