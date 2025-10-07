@@ -72,11 +72,6 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   clear: jest.fn(),
 }));
 
-// Mock nanoid
-jest.mock('nanoid', () => ({
-  nanoid: () => 'test-id-' + Math.random().toString(36).substring(7),
-}));
-
 // Suppress console warnings in tests
 global.console = {
   ...console,

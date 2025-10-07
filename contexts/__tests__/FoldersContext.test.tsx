@@ -20,8 +20,8 @@ jest.mock('../../services/folderStorage', () => ({
   },
 }));
 
-jest.mock('nanoid', () => ({
-  nanoid: () => 'test-id-123',
+jest.mock('../../utils/idGenerator', () => ({
+  generateId: () => 'test-id-123',
 }));
 
 const MockedFolderStorage = FolderStorage.FolderStorage as jest.Mocked<typeof FolderStorage.FolderStorage>;

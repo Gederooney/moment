@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { nanoid } from 'nanoid';
+import { generateId } from '../utils/idGenerator';
 import debounce from 'lodash.debounce';
 import { Logger } from '../services/logger/Logger';
 
@@ -227,7 +227,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
   const createPlaylist = useCallback(
     async (name: string, description?: string): Promise<Playlist> => {
       const playlist: Playlist = {
-        id: nanoid(),
+        id: generateId(),
         name,
         description,
         videos: [],
@@ -274,7 +274,7 @@ export function PlaylistProvider({ children }: { children: ReactNode }) {
     async (playlistId: string, video: Omit<PlaylistVideo, 'id' | 'addedAt'>): Promise<void> => {
       const newVideo: PlaylistVideo = {
         ...video,
-        id: nanoid(),
+        id: generateId(),
         addedAt: Date.now(),
       };
 

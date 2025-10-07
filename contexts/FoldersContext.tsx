@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { Folder, FolderItem, FolderSettings } from '../types/folder';
 import { FolderStorage } from '../services/folderStorage';
-import { nanoid } from 'nanoid';
+import { generateId } from '../utils/idGenerator';
 
 interface FoldersContextType {
   folders: Folder[];
@@ -58,7 +58,7 @@ export function FoldersProvider({ children }: FoldersProviderProps) {
     async (name: string, parentId?: string, description?: string): Promise<Folder> => {
       try {
         const newFolder: Folder = {
-          id: nanoid(),
+          id: generateId(),
           name,
           description,
           parentFolderId: parentId,
