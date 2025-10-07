@@ -4,7 +4,7 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|@react-navigation|@unimodules|unimodules|react-native-gesture-handler|react-native-reanimated|react-native-screens|react-native-safe-area-context|@react-native-async-storage)/)',
+    'node_modules/(?!(react-native|@react-native|expo|@expo|@react-navigation|@unimodules|unimodules|react-native-gesture-handler|react-native-reanimated|react-native-screens|react-native-safe-area-context|@react-native-async-storage|nanoid)/)',
   ],
   moduleNameMapper: {
     '^react-native$': '<rootDir>/__mocks__/react-native.js',
