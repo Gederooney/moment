@@ -353,7 +353,7 @@ export function usePlayerState(playerRef: React.RefObject<YouTubePlayerHandle | 
 
   const captureMoment = useCallback(async () => {
     if (!videoState.isReady || !videoId || !playerRef.current) {
-      return;
+      return undefined;
     }
 
     try {
@@ -363,7 +363,7 @@ export function usePlayerState(playerRef: React.RefObject<YouTubePlayerHandle | 
         timeToCapture = videoState.currentTime;
       }
 
-      await captureFromContext(
+      const newMoment = await captureFromContext(
         videoId,
         timeToCapture,
         settings.momentDuration,
@@ -371,7 +371,11 @@ export function usePlayerState(playerRef: React.RefObject<YouTubePlayerHandle | 
         url || `https://youtube.com/watch?v=${videoId}`,
         videoThumbnail
       );
-    } catch (error) {}
+
+      return newMoment;
+    } catch (error) {
+      return undefined;
+    }
   }, [videoState, videoId, videoTitle, url, videoThumbnail, settings, captureFromContext, playerRef]);
 
   const playMoment = useCallback(

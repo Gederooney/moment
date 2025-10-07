@@ -1,35 +1,51 @@
 /**
  * RichTextEditor Component
- * Based on @10play/tentap-editor official example
+ * Based on @10play/tentap-editor official implementation
+ * Provides a rich text editing experience with toolbar above keyboard
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { RichText, Toolbar, useEditorBridge, useEditorContent } from '@10play/tentap-editor';
-import { Colors } from '../../constants/Colors';
 
 interface RichTextEditorProps {
   initialValue?: string;
   onContentChange?: (html: string) => void;
   placeholder?: string;
+  darkMode?: boolean;
 }
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   initialValue = '',
   onContentChange,
-  placeholder = 'Tapez vos notes ici...',
+  placeholder = 'Start taking notes here...',
+  darkMode = false,
 }) => {
   const editor = useEditorBridge({
     autofocus: false,
     avoidIosKeyboard: true,
-    initialContent: initialValue,
+    initialContent: initialValue || '',
+    theme: {
+      toolbar: darkMode
+        ? {
+            toolbarBody: {
+              backgroundColor: '#2a2a2a',
+              borderTopColor: '#404040',
+              borderBottomColor: '#404040',
+            },
+          }
+        : undefined,
+      webview: {
+        backgroundColor: darkMode ? '#1a1a1a' : '#ffffff',
+      },
+    },
   });
 
-  // Use the official useEditorContent hook to get content
+  // Get content changes
   const content = useEditorContent(editor, { type: 'html' });
   const previousContentRef = useRef<string>(initialValue);
 
-  // Track content changes
+  // Track content changes and notify parent
   useEffect(() => {
     if (content && content !== previousContentRef.current) {
       previousContentRef.current = content;
@@ -38,22 +54,21 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [content, onContentChange]);
 
   return (
-    <View style={styles.container}>
-      <RichText editor={editor} />
+    <>
+      <RichText editor={editor} style={styles.richText} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
         <Toolbar editor={editor} />
       </KeyboardAvoidingView>
-    </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  richText: {
     flex: 1,
-    backgroundColor: Colors.background.white,
   },
   keyboardAvoid: {
     position: 'absolute',

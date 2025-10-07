@@ -13,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { getColors } from '../../constants/Colors';
 import { useAddVideoModal } from './useAddVideoModal';
 import { VideoUrlInput } from './_VideoUrlInput';
@@ -45,10 +44,8 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     handleUrlChange,
   } = useAddVideoModal(visible, onClose, onAddVideo);
 
-  if (!visible) return null;
-
   return (
-    <Modal transparent visible={visible} onRequestClose={handleClose} statusBarTranslucent>
+    <Modal transparent visible={visible} onRequestClose={handleClose} statusBarTranslucent animationType="none">
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -78,15 +75,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text.primary }]}>Ajouter une vidéo</Text>
-            <TouchableOpacity
-              onPress={handleClose}
-              disabled={isLoading}
-              style={styles.closeButton}
-              accessibilityLabel="Fermer"
-              accessibilityRole="button"
-            >
-              <Ionicons name="close" size={24} color={colors.text.secondary} />
-            </TouchableOpacity>
           </View>
 
           {/* Content */}

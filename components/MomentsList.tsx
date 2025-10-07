@@ -12,12 +12,14 @@ interface MomentsListProps {
   moments: CapturedMoment[];
   onPlayMoment: (timestamp: number) => void;
   onDeleteMoment: (id: string) => void;
+  onEditMoment?: (moment: CapturedMoment) => void;
 }
 
 export const MomentsList: React.FC<MomentsListProps> = ({
   moments,
   onPlayMoment,
   onDeleteMoment,
+  onEditMoment,
 }) => {
   const { updateMoment } = useMomentsContext();
   const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
@@ -32,7 +34,12 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   };
 
   const handleLongPress = (moment: CapturedMoment) => {
-    setEditingMoment(moment);
+    // Use external edit handler if provided, otherwise use internal modal
+    if (onEditMoment) {
+      onEditMoment(moment);
+    } else {
+      setEditingMoment(moment);
+    }
   };
 
   const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
@@ -75,7 +82,7 @@ export const MomentsList: React.FC<MomentsListProps> = ({
           {/* Info */}
           <View style={styles.momentInfo}>
             <Text style={styles.momentTitle} numberOfLines={1}>
-              Moment {index + 1}
+              {item.title || `Moment ${index + 1}`}
             </Text>
             <Text style={styles.momentTimestamp}>à {formatTime(item.timestamp)}</Text>
           </View>
@@ -105,7 +112,8 @@ export const MomentsList: React.FC<MomentsListProps> = ({
         </View>
       </View>
 
-      {editingMoment && (
+      {/* Only show internal modal if no external edit handler is provided */}
+      {!onEditMoment && editingMoment && (
         <MomentEditModal
           moment={editingMoment}
           visible={!!editingMoment}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { getColors } from '../../constants/Colors';
 import { YouTubePlayerHandle } from '../../components/YouTubePlayer';
 import { usePlayerState } from './_usePlayerState';
@@ -9,17 +9,15 @@ import { PlayerMoments } from './_PlayerMoments';
 import { PlayerControls } from './_PlayerControls';
 import { useTopBarContext } from '../../contexts/TopBarContext';
 import { MomentEditor } from '../../components/MomentEditor';
-import { useMoments } from '../../hooks/useMoments';
+import { useMomentsContext } from '../../contexts/MomentsContext';
 import { CapturedMoment } from '../../types/moment';
-import { formatTime } from '../../utils/time';
 
 export default function PlayerScreen() {
   const playerRef = useRef<YouTubePlayerHandle>(null);
   const { setVideoState, clearVideoState, setBackButton } = useTopBarContext();
-  const { updateMomentNotes, updateMomentTags, updateMoment: updateMomentInContext } = useMoments();
+  const { updateMoment: updateMomentInContext } = useMomentsContext();
   const [editorVisible, setEditorVisible] = useState(false);
   const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
-  const [pendingMomentData, setPendingMomentData] = useState<{ videoId: string; timestamp: number } | null>(null);
 
   const {
     videoId,
@@ -57,18 +55,14 @@ export default function PlayerScreen() {
     removeVideo(queueVideo.id);
   };
 
-  // Handle capture moment - open editor immediately
+  // Handle capture moment - save directly without opening editor
   const handleCaptureMoment = async () => {
-    const timestamp = videoState.currentTime;
-    setPendingMomentData({ videoId, timestamp });
-    setEditingMoment(null);
-    setEditorVisible(true);
+    await originalCaptureMoment();
   };
 
-  // Handle edit existing moment
+  // Handle edit existing moment (opened via long press)
   const handleEditMoment = (moment: CapturedMoment) => {
     setEditingMoment(moment);
-    setPendingMomentData(null);
     setEditorVisible(true);
   };
 
@@ -81,27 +75,15 @@ export default function PlayerScreen() {
         notes: data.notes,
         tags: data.tags,
       });
-    } else if (pendingMomentData) {
-      // Create new moment
-      const newMoment = await originalCaptureMoment();
-      if (newMoment) {
-        await updateMomentInContext(newMoment.id, {
-          title: data.title,
-          notes: data.notes,
-          tags: data.tags,
-        });
-      }
     }
     setEditorVisible(false);
     setEditingMoment(null);
-    setPendingMomentData(null);
   };
 
   // Handle cancel editor
   const handleCancelEditor = () => {
     setEditorVisible(false);
     setEditingMoment(null);
-    setPendingMomentData(null);
   };
 
   // Update TopBar with video title and back button
@@ -139,44 +121,41 @@ export default function PlayerScreen() {
         playerRef={playerRef}
       />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          <PlayerQueue
-            videos={queueData}
-            currentVideoId={getCurrentVideoId()}
-            onVideoPress={handleQueueVideoPress}
-            onAddVideo={addVideoByUrl}
-            onVideoRemove={handleQueueVideoRemove}
-            onVideoReorder={reorderVideos}
-            isDark={isDark}
-          />
-
-          <PlayerMoments moments={moments} onPlayMoment={playMoment} onDeleteMoment={deleteMoment} />
-        </ScrollView>
-
-        <PlayerControls
-          onCapture={handleCaptureMoment}
-          disabled={!videoState.isReady}
-          currentTime={videoState.currentTime}
+        <PlayerQueue
+          videos={queueData}
+          currentVideoId={getCurrentVideoId()}
+          onVideoPress={handleQueueVideoPress}
+          onAddVideo={addVideoByUrl}
+          onVideoRemove={handleQueueVideoRemove}
+          onVideoReorder={reorderVideos}
+          isDark={isDark}
         />
-      </KeyboardAvoidingView>
+
+        <PlayerMoments
+          moments={moments}
+          onPlayMoment={playMoment}
+          onDeleteMoment={deleteMoment}
+          onEditMoment={handleEditMoment}
+        />
+      </ScrollView>
+
+      <PlayerControls
+        onCapture={handleCaptureMoment}
+        disabled={!videoState.isReady}
+        currentTime={videoState.currentTime}
+      />
 
       {/* Moment Editor Modal */}
       <MomentEditor
         visible={editorVisible}
         moment={editingMoment}
-        defaultTitle={
-          pendingMomentData
-            ? `Moment at ${formatTime(pendingMomentData.timestamp)}`
-            : editingMoment?.title || ''
-        }
+        defaultTitle={editingMoment?.title || ''}
         onSave={handleSaveMoment}
         onCancel={handleCancelEditor}
         darkMode={isDark}

@@ -1,6 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { CapturedMoment } from '../../types/moment';
 import { Colors } from '../../constants/Colors';
 import { RichTextEditor } from '../RichTextEditor/RichTextEditor';
@@ -24,7 +33,7 @@ export function MomentEditModal({ moment, visible, onClose, onSave }: MomentEdit
     if (title.trim()) {
       onSave(moment.id, {
         title: title.trim(),
-        notes: notesContentRef.current.trim() || undefined
+        notes: notesContentRef.current.trim() || undefined,
       });
       onClose();
     }
@@ -49,9 +58,6 @@ export function MomentEditModal({ moment, visible, onClose, onSave }: MomentEdit
       >
         <View style={styles.header}>
           <Text style={styles.title}>Modifier le moment</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <MaterialIcons name="close" size={24} color={Colors.text.primary} />
-          </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
@@ -100,7 +106,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 16,
@@ -111,9 +117,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: Colors.text.primary,
-  },
-  closeButton: {
-    padding: 4,
   },
   content: {
     flex: 1,

@@ -103,7 +103,7 @@ export const Queue: React.FC<QueueProps> = ({
             onPress={handleAddPress}
             activeOpacity={0.7}
           >
-            <Ionicons name="add" size={24} color={colors.text.primary} />
+            <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
@@ -163,9 +163,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(128, 128, 128, 0.2)',
+    backgroundColor: '#FF3B30',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#FF3B30',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 4,
   },
   collapsibleContent: {
     // Pas de limite de hauteur - prend tout l'espace nécessaire

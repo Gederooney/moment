@@ -7,12 +7,18 @@ interface PlayerMomentsProps {
   moments: CapturedMoment[];
   onPlayMoment: (timestamp: number) => void;
   onDeleteMoment: (momentId: string) => void;
+  onEditMoment: (moment: CapturedMoment) => void;
 }
 
-export function PlayerMoments({ moments, onPlayMoment, onDeleteMoment }: PlayerMomentsProps) {
+export function PlayerMoments({ moments, onPlayMoment, onDeleteMoment, onEditMoment }: PlayerMomentsProps) {
   return (
     <View style={styles.container}>
-      <MomentsList moments={moments} onPlayMoment={onPlayMoment} onDeleteMoment={onDeleteMoment} />
+      <MomentsList
+        moments={moments}
+        onPlayMoment={onPlayMoment}
+        onDeleteMoment={onDeleteMoment}
+        onEditMoment={onEditMoment}
+      />
     </View>
   );
 }

@@ -33,7 +33,7 @@ export const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     marginBottom: Spacing.md,
@@ -42,10 +42,6 @@ export const styles = StyleSheet.create({
     ...Typography.h2,
     fontSize: 20,
     fontWeight: '600',
-  },
-  closeButton: {
-    padding: Spacing.sm,
-    marginRight: -Spacing.sm,
   },
   content: {
     flex: 1,
