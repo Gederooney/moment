@@ -5,6 +5,8 @@ import { useMomentsContext } from '../../../contexts/MomentsContext';
 import { useTopBarContext } from '../../../contexts/TopBarContext';
 import { fetchYouTubeMetadataWithFallback } from '../../../services/youtubeMetadata';
 import { extractVideoId, isValidYouTubeUrl, normalizeYouTubeUrl } from '../../../utils/youtube';
+import { TagService } from '../../../services/tagService';
+import { VideoWithMoments } from '../../../types/moment';
 
 interface ProcessedVideoResult {
   videoId: string;
@@ -71,8 +73,42 @@ export function useMomentsScreen() {
   const [isUrlValid, setIsUrlValid] = useState(false);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState(false);
   const [modalAnimation] = useState(new Animated.Value(0));
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
 
-  const filteredVideos = searchVideos(searchQuery);
+  // First filter by search query
+  const searchFilteredVideos = searchVideos(searchQuery);
+
+  // Then filter by tags if any are selected
+  const filteredVideos = selectedTags.length > 0
+    ? filterVideosByTags(searchFilteredVideos, selectedTags)
+    : searchFilteredVideos;
+
+  // Helper function to filter videos by tags (AND logic)
+  function filterVideosByTags(videos: VideoWithMoments[], tags: string[]): VideoWithMoments[] {
+    if (tags.length === 0) return videos;
+
+    const normalizedTags = tags.map(t => t.toLowerCase().trim());
+
+    return videos
+      .map(video => {
+        // Filter moments that have all selected tags
+        const filteredMoments = video.moments.filter(moment => {
+          if (!moment.tags || moment.tags.length === 0) return false;
+          const momentTagsNormalized = moment.tags.map(t => t.toLowerCase().trim());
+          return normalizedTags.every(tag => momentTagsNormalized.includes(tag));
+        });
+
+        // Only include video if it has matching moments
+        if (filteredMoments.length === 0) return null;
+
+        return {
+          ...video,
+          moments: filteredMoments,
+        };
+      })
+      .filter((video): video is VideoWithMoments => video !== null);
+  }
 
   useEffect(() => {
     setIsUrlValid(isValidYouTubeUrl(videoUrl));
@@ -82,6 +118,15 @@ export function useMomentsScreen() {
     const unsubscribe = subscribeMomentUpdates(() => {});
     return unsubscribe;
   }, [subscribeMomentUpdates]);
+
+  // Load available tags
+  useEffect(() => {
+    const loadTags = async () => {
+      const tags = await TagService.getAllTags();
+      setAvailableTags(tags);
+    };
+    loadTags();
+  }, [videos]); // Reload when videos change
 
   useFocusEffect(
     useCallback(() => {
@@ -149,6 +194,27 @@ export function useMomentsScreen() {
       ]
     );
   }, [clearAllHistory]);
+
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags(prev => {
+      const normalizedTag = tag.toLowerCase().trim();
+      const isSelected = prev.some(t => t.toLowerCase().trim() === normalizedTag);
+
+      if (isSelected) {
+        return prev.filter(t => t.toLowerCase().trim() !== normalizedTag);
+      } else {
+        return [...prev, tag];
+      }
+    });
+  }, []);
+
+  const handleClearTagFilters = useCallback(() => {
+    setSelectedTags([]);
+  }, []);
+
+  const getFilteredMomentsCount = useCallback(() => {
+    return filteredVideos.reduce((count, video) => count + video.moments.length, 0);
+  }, [filteredVideos]);
 
   const showAddVideoModal = useCallback(() => {
     setIsModalVisible(true);
@@ -249,5 +315,10 @@ export function useMomentsScreen() {
     showAddVideoModal,
     hideAddVideoModal,
     handleAddVideo,
+    selectedTags,
+    availableTags,
+    handleToggleTag,
+    handleClearTagFilters,
+    getFilteredMomentsCount,
   };
 }

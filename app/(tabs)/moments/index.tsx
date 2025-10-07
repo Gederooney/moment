@@ -13,6 +13,7 @@ import { MomentsEmptyState } from './_MomentsEmptyState';
 import { MomentsModal } from './_MomentsModal';
 import { MomentsLoadingState } from './_MomentsLoadingState';
 import { MomentsList } from './_MomentsList';
+import { TagFilterChips } from '../../../components/TagFilterChips';
 
 export default function MomentsScreen() {
   const {
@@ -39,6 +40,11 @@ export default function MomentsScreen() {
     showAddVideoModal,
     hideAddVideoModal,
     handleAddVideo,
+    selectedTags,
+    availableTags,
+    handleToggleTag,
+    handleClearTagFilters,
+    getFilteredMomentsCount,
   } = useMomentsScreen();
 
   const renderVideoItem = useCallback(
@@ -93,6 +99,24 @@ export default function MomentsScreen() {
         onClearAll={handleClearAllHistory}
       />
 
+      {availableTags.length > 0 && (
+        <TagFilterChips
+          availableTags={availableTags}
+          selectedTags={selectedTags}
+          onToggleTag={handleToggleTag}
+          onClearAll={handleClearTagFilters}
+        />
+      )}
+
+      {selectedTags.length > 0 && (
+        <View style={styles.filterInfo}>
+          <Text style={styles.filterInfoText}>
+            {getFilteredMomentsCount()} moment{getFilteredMomentsCount() !== 1 ? 's' : ''} with{' '}
+            {selectedTags.map(tag => `#${tag}`).join(' + ')}
+          </Text>
+        </View>
+      )}
+
       <MomentsList
         filteredVideos={filteredVideos}
         expandedVideoId={expandedVideoId}
@@ -120,5 +144,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background.primary,
+  },
+  filterInfo: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#e3f2fd',
+  },
+  filterInfoText: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: '500',
   },
 });
