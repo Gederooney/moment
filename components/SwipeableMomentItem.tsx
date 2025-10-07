@@ -6,7 +6,10 @@ import { CapturedMoment } from '../types/moment';
 import { SwipeableItem } from './SwipeableItem';
 import { formatDuration } from '../utils/time';
 import { MomentEditModal } from './moments/MomentEditModal';
+import { MomentContextMenu } from './MomentContextMenu';
+import { FolderPickerModal } from './FolderPickerModal';
 import { useMomentsContext } from '../contexts/MomentsContext';
+import { useFolders } from '../hooks/useFolders';
 
 interface SwipeableMomentItemProps {
   moment: CapturedMoment;
@@ -37,7 +40,10 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
   showNewBadge = false,
 }) => {
   const { updateMoment } = useMomentsContext();
+  const { folders, addMomentToFolder, createFolder } = useFolders();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
 
   const handleDelete = () => {
     Alert.alert(
@@ -58,7 +64,28 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
   };
 
   const handleLongPress = () => {
+    setShowContextMenu(true);
+  };
+
+  const handleContextMenuEdit = () => {
     setShowEditModal(true);
+  };
+
+  const handleContextMenuAddToFolder = () => {
+    setShowFolderPicker(true);
+  };
+
+  const handleContextMenuDelete = () => {
+    handleDelete();
+  };
+
+  const handleSelectFolder = async (folderId: string) => {
+    try {
+      await addMomentToFolder(folderId, moment.id);
+      Alert.alert('Succès', 'Moment ajouté au dossier');
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible d\'ajouter le moment au dossier');
+    }
   };
 
   const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
@@ -109,11 +136,32 @@ export const SwipeableMomentItem: React.FC<SwipeableMomentItemProps> = ({
         </TouchableOpacity>
       </SwipeableItem>
 
+      {/* Context Menu */}
+      <MomentContextMenu
+        visible={showContextMenu}
+        onClose={() => setShowContextMenu(false)}
+        onEdit={handleContextMenuEdit}
+        onAddToFolder={handleContextMenuAddToFolder}
+        onDelete={handleContextMenuDelete}
+        momentTitle={moment.title}
+      />
+
+      {/* Edit Modal */}
       <MomentEditModal
         moment={moment}
         visible={showEditModal}
         onClose={() => setShowEditModal(false)}
         onSave={handleSaveEdit}
+      />
+
+      {/* Folder Picker Modal */}
+      <FolderPickerModal
+        visible={showFolderPicker}
+        folders={folders}
+        onClose={() => setShowFolderPicker(false)}
+        onSelectFolder={handleSelectFolder}
+        onCreateFolder={createFolder}
+        selectedMomentId={moment.id}
       />
     </>
   );

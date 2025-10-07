@@ -6,6 +6,7 @@ import { Colors } from '../constants/Colors';
 import { SwipeableItem } from './SwipeableItem';
 import { formatDuration } from '../utils/time';
 import { MomentEditModal } from './moments/MomentEditModal';
+import { MomentContextMenu } from './MomentContextMenu';
 import { useMomentsContext } from '../contexts/MomentsContext';
 
 interface MomentsListProps {
@@ -13,6 +14,8 @@ interface MomentsListProps {
   onPlayMoment: (timestamp: number) => void;
   onDeleteMoment: (id: string) => void;
   onEditMoment?: (moment: CapturedMoment) => void;
+  onAddToFolder?: (moment: CapturedMoment) => void;
+  showContextMenu?: boolean; // If true, show context menu on long press instead of direct edit
 }
 
 export const MomentsList: React.FC<MomentsListProps> = ({
@@ -20,9 +23,13 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   onPlayMoment,
   onDeleteMoment,
   onEditMoment,
+  onAddToFolder,
+  showContextMenu = false,
 }) => {
   const { updateMoment } = useMomentsContext();
   const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
+  const [contextMenuMoment, setContextMenuMoment] = useState<CapturedMoment | null>(null);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
@@ -34,10 +41,14 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   };
 
   const handleLongPress = (moment: CapturedMoment) => {
-    // Use external edit handler if provided, otherwise use internal modal
-    if (onEditMoment) {
+    if (showContextMenu) {
+      // Show context menu (for moments page)
+      setContextMenuMoment(moment);
+    } else if (onEditMoment) {
+      // Use external edit handler (for player page - direct edit)
       onEditMoment(moment);
     } else {
+      // Use internal modal (fallback)
       setEditingMoment(moment);
     }
   };
@@ -45,6 +56,27 @@ export const MomentsList: React.FC<MomentsListProps> = ({
   const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
     updateMoment(momentId, updates);
     setEditingMoment(null);
+  };
+
+  const handleContextMenuEdit = () => {
+    if (contextMenuMoment) {
+      setEditingMoment(contextMenuMoment);
+      setContextMenuMoment(null);
+    }
+  };
+
+  const handleContextMenuAddToFolder = () => {
+    if (contextMenuMoment && onAddToFolder) {
+      onAddToFolder(contextMenuMoment);
+      setContextMenuMoment(null);
+    }
+  };
+
+  const handleContextMenuDelete = () => {
+    if (contextMenuMoment) {
+      onDeleteMoment(contextMenuMoment.id);
+      setContextMenuMoment(null);
+    }
   };
 
   const renderMoment = ({ item, index }: { item: CapturedMoment; index: number }) => {
@@ -112,8 +144,20 @@ export const MomentsList: React.FC<MomentsListProps> = ({
         </View>
       </View>
 
-      {/* Only show internal modal if no external edit handler is provided */}
-      {!onEditMoment && editingMoment && (
+      {/* Context Menu */}
+      {contextMenuMoment && (
+        <MomentContextMenu
+          visible={!!contextMenuMoment}
+          onClose={() => setContextMenuMoment(null)}
+          onEdit={handleContextMenuEdit}
+          onAddToFolder={handleContextMenuAddToFolder}
+          onDelete={handleContextMenuDelete}
+          momentTitle={contextMenuMoment.title || `Moment ${moments.indexOf(contextMenuMoment) + 1}`}
+        />
+      )}
+
+      {/* Edit Modal - shows when edit is selected from context menu or direct long press */}
+      {editingMoment && (
         <MomentEditModal
           moment={editingMoment}
           visible={!!editingMoment}

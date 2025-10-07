@@ -15,6 +15,7 @@ interface FoldersContextType {
   createFolder: (name: string, parentId?: string, description?: string) => Promise<Folder>;
   deleteFolder: (id: string) => Promise<void>;
   addItemToFolder: (folderId: string, item: FolderItem) => Promise<void>;
+  addMomentToFolder: (folderId: string, momentId: string) => Promise<void>;
   removeItemFromFolder: (folderId: string, itemId: string) => Promise<void>;
   moveFolder: (folderId: string, newParentId?: string) => Promise<void>;
   getFolderPath: (folderId: string) => string[];
@@ -107,6 +108,20 @@ export function FoldersProvider({ children }: FoldersProviderProps) {
     [loadFolders]
   );
 
+  // Helper function to add a moment to a folder
+  const addMomentToFolder = useCallback(
+    async (folderId: string, momentId: string) => {
+      const folderItem: FolderItem = {
+        id: generateId(),
+        type: 'screen_recording_moment',
+        itemId: momentId,
+        addedAt: new Date(),
+      };
+      await addItemToFolder(folderId, folderItem);
+    },
+    [addItemToFolder]
+  );
+
   const removeItemFromFolder = useCallback(
     async (folderId: string, itemId: string) => {
       await FolderStorage.removeItemFromFolder(folderId, itemId);
@@ -174,6 +189,7 @@ export function FoldersProvider({ children }: FoldersProviderProps) {
     createFolder,
     deleteFolder,
     addItemToFolder,
+    addMomentToFolder,
     removeItemFromFolder,
     moveFolder,
     getFolderPath,
