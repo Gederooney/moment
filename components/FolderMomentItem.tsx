@@ -4,12 +4,12 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { CapturedMoment } from '../types/moment';
 import { SwipeableItem } from './SwipeableItem';
-import { MomentEditModal } from './moments/MomentEditModal';
+import { MomentEditor } from './MomentEditor';
 import { useMomentsContext } from '../contexts/MomentsContext';
 
 interface FolderMomentItemProps {
@@ -31,13 +31,21 @@ export const FolderMomentItem: React.FC<FolderMomentItemProps> = ({
 }) => {
   const { updateMoment } = useMomentsContext();
   const [showEditModal, setShowEditModal] = useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
 
   const getThumbnailUrl = (videoId: string) => {
     return `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
   };
 
-  const handleSaveEdit = (momentId: string, updates: Partial<CapturedMoment>) => {
-    updateMoment(momentId, updates);
+  const handleSaveMoment = async (updates: { title: string; notes: string; tags: string[] }) => {
+    if (!moment) return;
+    await updateMoment(moment.id, updates);
+    setShowEditModal(false);
+  };
+
+  const handleCancelEditor = () => {
+    setShowEditModal(false);
   };
 
   const thumbnailUrl = getThumbnailUrl(moment.videoId);
@@ -88,12 +96,14 @@ export const FolderMomentItem: React.FC<FolderMomentItemProps> = ({
         </TouchableOpacity>
       </SwipeableItem>
 
-      {/* Edit Modal - same as player page */}
-      <MomentEditModal
-        moment={moment}
+      {/* Moment Editor - same as player page */}
+      <MomentEditor
         visible={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        onSave={handleSaveEdit}
+        moment={moment}
+        defaultTitle={moment.title || ''}
+        onSave={handleSaveMoment}
+        onCancel={handleCancelEditor}
+        darkMode={isDark}
       />
     </>
   );

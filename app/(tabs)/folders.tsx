@@ -103,7 +103,17 @@ export default function FoldersScreen() {
   const handleRemoveMomentFromFolder = async (moment: CapturedMoment) => {
     if (!currentFolder) return;
     try {
-      await removeItemFromFolder(currentFolder.id, moment.id);
+      // Find the FolderItem that corresponds to this moment
+      const folderItem = currentFolder.items.find(
+        item => item.type === 'screen_recording_moment' && item.itemId === moment.id
+      );
+
+      if (!folderItem) {
+        Alert.alert('Erreur', 'Moment non trouvé dans le dossier');
+        return;
+      }
+
+      await removeItemFromFolder(currentFolder.id, folderItem.id);
       Alert.alert('Succès', 'Moment retiré du dossier');
     } catch (error) {
       Alert.alert('Erreur', 'Impossible de retirer le moment du dossier');
