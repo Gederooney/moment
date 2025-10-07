@@ -56,24 +56,32 @@ export function FoldersProvider({ children }: FoldersProviderProps) {
 
   const createFolder = useCallback(
     async (name: string, parentId?: string, description?: string): Promise<Folder> => {
-      const newFolder: Folder = {
-        id: nanoid(),
-        name,
-        description,
-        parentFolderId: parentId,
-        items: [],
-        subFolderIds: [],
-        settings: {
-          sortBy: 'dateAdded',
-          sortOrder: 'desc',
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      try {
+        const newFolder: Folder = {
+          id: nanoid(),
+          name,
+          description,
+          parentFolderId: parentId,
+          items: [],
+          subFolderIds: [],
+          settings: {
+            sortBy: 'dateAdded',
+            sortOrder: 'desc',
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-      await FolderStorage.addFolder(newFolder);
-      await loadFolders();
-      return newFolder;
+        console.log('[FoldersContext] Creating folder:', newFolder);
+        await FolderStorage.addFolder(newFolder);
+        console.log('[FoldersContext] Folder created, reloading...');
+        await loadFolders();
+        console.log('[FoldersContext] Folders reloaded');
+        return newFolder;
+      } catch (error) {
+        console.error('[FoldersContext] Error creating folder:', error);
+        throw error;
+      }
     },
     [loadFolders]
   );

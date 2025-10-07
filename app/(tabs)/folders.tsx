@@ -96,7 +96,7 @@ export default function FoldersScreen() {
       {/* Folder Tree */}
       {folders.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, isDark && styles.emptyTextDark]}>📁 Aucun dossier</Text>
+          <Text style={[styles.emptyText, isDark && styles.emptyTextDark]}>Aucun dossier</Text>
           <Text style={[styles.emptySubtext, isDark && styles.emptySubtextDark]}>
             Appuyez sur le bouton + pour créer votre premier dossier
           </Text>
