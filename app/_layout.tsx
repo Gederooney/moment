@@ -8,6 +8,7 @@ import { MomentsProvider } from '../contexts/MomentsContext';
 import { TopBarProvider } from '../contexts/TopBarContext';
 import { PlaylistProvider } from '../contexts/PlaylistContext';
 import { AuthProvider } from '../contexts/AuthContext';
+import { FoldersProvider } from '../contexts/FoldersContext';
 import { TopBar } from '../components/TopBar';
 import { View, StyleSheet } from 'react-native';
 import { cleanupMetadataCache } from '../services/youtubeMetadata';
@@ -67,11 +68,13 @@ function AppContent() {
   return (
     <AuthProvider autoRefresh={true}>
       <TopBarProvider>
-        <MomentsProvider>
-          <PlaylistProvider>
-            <MainApp />
-          </PlaylistProvider>
-        </MomentsProvider>
+        <FoldersProvider>
+          <MomentsProvider>
+            <PlaylistProvider>
+              <MainApp />
+            </PlaylistProvider>
+          </MomentsProvider>
+        </FoldersProvider>
       </TopBarProvider>
     </AuthProvider>
   );
