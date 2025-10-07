@@ -9,6 +9,8 @@ export interface CapturedMoment {
   title: string;
   videoId: string;
   createdAt: Date;
+  notes?: string; // Markdown notes
+  tags?: string[]; // Tags for organization
 }
 
 /**

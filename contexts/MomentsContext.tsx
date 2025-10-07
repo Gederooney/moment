@@ -10,6 +10,8 @@ interface MomentsContextType {
   refreshMoments: () => Promise<void>;
   addMomentToVideo: (videoId: string, moment: CapturedMoment) => Promise<void>;
   updateMoment: (momentId: string, updates: Partial<CapturedMoment>) => Promise<void>;
+  updateMomentNotes: (momentId: string, notes: string) => Promise<void>;
+  updateMomentTags: (momentId: string, tags: string[]) => Promise<void>;
   deleteMoment: (momentId: string) => Promise<void>;
   deleteAllMomentsForVideo: (videoId: string) => Promise<void>;
   clearAllHistory: () => Promise<void>;
@@ -175,12 +177,28 @@ export function MomentsProvider({ children }: MomentsProviderProps) {
     [deleteMoment]
   );
 
+  const updateMomentNotes = useCallback(
+    async (momentId: string, notes: string) => {
+      await updateMoment(momentId, { notes });
+    },
+    [updateMoment]
+  );
+
+  const updateMomentTags = useCallback(
+    async (momentId: string, tags: string[]) => {
+      await updateMoment(momentId, { tags });
+    },
+    [updateMoment]
+  );
+
   const contextValue: MomentsContextType = {
     videos: videoHistory.videos,
     isLoading: videoHistory.isLoading,
     refreshMoments: videoHistory.loadHistory,
     addMomentToVideo,
     updateMoment,
+    updateMomentNotes,
+    updateMomentTags,
     deleteMoment,
     deleteAllMomentsForVideo,
     clearAllHistory,
