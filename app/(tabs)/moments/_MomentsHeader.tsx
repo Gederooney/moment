@@ -7,13 +7,42 @@ interface MomentsHeaderProps {
   onAddVideo: () => void;
   onExport?: () => void;
   hasExportableMoments?: boolean;
+  onToggleSelection?: () => void;
+  isSelectionMode?: boolean;
 }
 
-export function MomentsHeader({ onAddVideo, onExport, hasExportableMoments = false }: MomentsHeaderProps) {
+export function MomentsHeader({
+  onAddVideo,
+  onExport,
+  hasExportableMoments = false,
+  onToggleSelection,
+  isSelectionMode = false
+}: MomentsHeaderProps) {
   return (
     <View style={styles.header}>
+      {/* Selection button */}
+      {hasExportableMoments && onToggleSelection && (
+        <TouchableOpacity
+          style={[styles.exportButton, isSelectionMode && styles.selectionButtonActive]}
+          onPress={onToggleSelection}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name={isSelectionMode ? "close" : "checkmark-circle-outline"}
+            size={20}
+            color={isSelectionMode ? Colors.primary : Colors.text.secondary}
+          />
+          <Text style={[
+            styles.exportText,
+            isSelectionMode && styles.selectionTextActive
+          ]}>
+            {isSelectionMode ? 'Annuler' : 'Sélectionner'}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {/* Export button */}
-      {hasExportableMoments && onExport && (
+      {!isSelectionMode && hasExportableMoments && onExport && (
         <TouchableOpacity
           style={styles.exportButton}
           onPress={onExport}
@@ -61,6 +90,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: Colors.text.secondary,
+  },
+  selectionButtonActive: {
+    backgroundColor: Colors.primary + '15',
+    borderColor: Colors.primary,
+    borderWidth: 1,
+  },
+  selectionTextActive: {
+    color: Colors.primary,
   },
   floatingButton: {
     flexDirection: 'row',

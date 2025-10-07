@@ -13,6 +13,7 @@ import {
   Modal,
   Alert,
   FlatList,
+  ScrollView,
 } from 'react-native';
 import { useFolders } from '../../hooks/useFolders';
 import { Folder } from '../../types/folder';
@@ -20,6 +21,11 @@ import { Colors } from '../../constants/Colors';
 import { useTopBarContext } from '../../contexts/TopBarContext';
 import { FolderIcon, GridIcon, ListIcon } from '../../components/icons';
 import { Ionicons } from '@expo/vector-icons';
+import { FolderMomentItem } from '../../components/FolderMomentItem';
+import { MomentEditModal } from '../../components/moments/MomentEditModal';
+import { useMomentsContext } from '../../contexts/MomentsContext';
+import { useRouter } from 'expo-router';
+import { CapturedMoment } from '../../types/moment';
 
 type ViewMode = 'list' | 'grid';
 
@@ -33,14 +39,18 @@ export default function FoldersScreen() {
     setCurrentFolder,
     getFolderPath,
     refreshFolders,
+    removeItemFromFolder,
   } = useFolders();
 
+  const { getAllMoments, updateMoment } = useMomentsContext();
+  const router = useRouter();
   const { setTitle, setBackButton } = useTopBarContext();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAscending, setSortAscending] = useState(true);
+  const [editingMoment, setEditingMoment] = useState<CapturedMoment | null>(null);
 
   // Get current level folders (either root or children of current folder)
   const getCurrentLevelFolders = () => {
@@ -62,9 +72,53 @@ export default function FoldersScreen() {
 
   const currentLevelFolders = getCurrentLevelFolders();
 
+  // Get moments in current folder
+  const getCurrentFolderMoments = (): CapturedMoment[] => {
+    if (!currentFolder) return [];
+
+    const allMoments = getAllMoments();
+    const momentIds = currentFolder.items
+      .filter(item => item.type === 'screen_recording_moment')
+      .map(item => item.itemId);
+
+    return allMoments.filter(moment => momentIds.includes(moment.id));
+  };
+
+  const currentFolderMoments = getCurrentFolderMoments();
+
   const handleFolderPress = (folder: Folder) => {
     // Navigate into the folder
     setCurrentFolder(folder);
+  };
+
+  const handlePlayMoment = (moment: CapturedMoment) => {
+    // Navigate to player with the video and timestamp
+    router.push({
+      pathname: '/player',
+      params: {
+        videoId: moment.videoId,
+        timestamp: moment.timestamp.toString(),
+      },
+    });
+  };
+
+  const handleRemoveMomentFromFolder = async (moment: CapturedMoment) => {
+    if (!currentFolder) return;
+    try {
+      await removeItemFromFolder(currentFolder.id, moment.id);
+      Alert.alert('Succès', 'Moment retiré du dossier');
+    } catch (error) {
+      Alert.alert('Erreur', 'Impossible de retirer le moment du dossier');
+    }
+  };
+
+  const handleEditMoment = (moment: CapturedMoment) => {
+    setEditingMoment(moment);
+  };
+
+  const handleSaveMoment = (momentId: string, updates: Partial<CapturedMoment>) => {
+    updateMoment(momentId, updates);
+    setEditingMoment(null);
   };
 
   const handleBackPress = () => {
@@ -226,29 +280,68 @@ export default function FoldersScreen() {
       </View>
 
       {/* Content */}
-      {currentLevelFolders.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Aucun dossier</Text>
-          <Text style={styles.emptySubtext}>Appuyez sur + pour créer un dossier</Text>
-        </View>
-      ) : viewMode === 'grid' ? (
-        <FlatList
-          key="grid-view"
-          data={currentLevelFolders}
-          renderItem={renderFolderItem}
-          keyExtractor={item => item.id}
-          numColumns={3}
-          contentContainerStyle={styles.gridContainer}
-        />
-      ) : (
-        <FlatList
-          key="list-view"
-          data={currentLevelFolders}
-          renderItem={renderFolderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
-      )}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Sub-folders Section */}
+        {currentLevelFolders.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              DOSSIERS ({currentLevelFolders.length})
+            </Text>
+            {viewMode === 'grid' ? (
+              <View style={styles.gridContainer}>
+                {currentLevelFolders.map(folder => (
+                  <View key={folder.id} style={styles.gridItem}>
+                    {renderFolderItem({ item: folder })}
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={styles.listContainer}>
+                {currentLevelFolders.map(folder => (
+                  <View key={folder.id}>
+                    {renderFolderItem({ item: folder })}
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Moments Section */}
+        {currentFolderMoments.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              MOMENTS ({currentFolderMoments.length})
+            </Text>
+            <View style={styles.momentsContainer}>
+              {currentFolderMoments.map(moment => (
+                <FolderMomentItem
+                  key={moment.id}
+                  moment={moment}
+                  onPlay={() => handlePlayMoment(moment)}
+                  onRemoveFromFolder={() => handleRemoveMomentFromFolder(moment)}
+                  onEdit={() => handleEditMoment(moment)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Empty State */}
+        {currentLevelFolders.length === 0 && currentFolderMoments.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="folder-open-outline" size={64} color={Colors.text.tertiary} />
+            <Text style={styles.emptyText}>
+              {currentFolder ? 'Dossier vide' : 'Aucun dossier'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {currentFolder
+                ? 'Ajoutez des moments depuis la page Moments'
+                : 'Appuyez sur + pour créer un dossier'}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
 
       {/* FAB - Create Folder */}
       <TouchableOpacity style={styles.fab} onPress={() => setShowCreateModal(true)}>
@@ -299,6 +392,16 @@ export default function FoldersScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Moment Modal */}
+      {editingMoment && (
+        <MomentEditModal
+          moment={editingMoment}
+          visible={!!editingMoment}
+          onClose={() => setEditingMoment(null)}
+          onSave={handleSaveMoment}
+        />
+      )}
     </View>
   );
 }
@@ -399,7 +502,31 @@ const styles = StyleSheet.create({
     color: Colors.text.tertiary,
     fontWeight: '300',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 80,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.text.secondary,
+    letterSpacing: 0.5,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.background.secondary,
+  },
+  momentsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
   gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     padding: 16,
   },
   gridItem: {
